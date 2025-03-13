@@ -5,8 +5,7 @@ from typing import Mapping, Text, Tuple
 import torch
 from einops import rearrange, reduce
 
-# from modeling.quantizer.quantizer_utils import entropy_loss_fn
-from quantizer_utils import entropy_loss_fn
+from modeling.quantizer.quantizer_utils import entropy_loss_fn
 
 
 class LookupFreeQuantizer(torch.nn.Module):

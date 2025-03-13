@@ -465,6 +465,76 @@ class TokenizerEvaluator:
 
         return eval_score
 
+class ResidualTokenizerEvaluator:
+    def __init__(
+        self,
+        device,
+        num_quantizers: int = 1,
+        enable_rfid: bool = False,
+        enable_inception_score: bool = False,
+        enable_psnr_score: bool = False,
+        enable_ssim_score: bool = False,
+        enable_lpips_score: bool = False,
+        enable_mse_error: bool = False,
+        enable_mae_error: bool = False,
+        enable_codebook_usage_measure: bool = False,
+        enable_codebook_entropy_measure: bool = False,
+        num_codebook_entries: list[int] = [1024]
+    ):
+        
+        self.evaluators = []
+        for ind in num_quantizers: 
+            self.evaluators.append(
+                TokenizerEvaluator(
+                    device=device,
+                    enable_rfid=enable_rfid,
+                    enable_inception_score=enable_inception_score,
+                    enable_psnr_score=enable_psnr_score,
+                    enable_ssim_score=enable_ssim_score,
+                    enable_lpips_score=enable_lpips_score,
+                    enable_mse_error=enable_mse_error,
+                    enable_mae_error=enable_mae_error,
+                    enable_codebook_usage_measure=enable_codebook_usage_measure,
+                    enable_codebook_entropy_measure=enable_codebook_entropy_measure,
+                    num_codebook_entries=num_codebook_entries[ind]
+                )
+            )
+
+        
+    def update(
+        self,
+        level: int,
+        real_images: torch.Tensor,
+        fake_images: torch.Tensor,
+        codebook_indices: Optional[torch.Tensor] = None
+    ):
+        self.evaluators[level].update(real_images, fake_images, codebook_indices[level])
+
+    def reset_metrics(self):
+        for evaluator in self.evaluators:
+            evaluator.reset_metrics()
+
+    def result(self) -> Mapping[Text, torch.Tensor]:
+        """Return the evaluation result.
+        Returns:
+            Mapping[Text, torch.Tensor]: The evaluation result. The keys are the names of the metrics, 
+                and the values are the corresponding results. For example, `{"PSNR": 32.1, "SSIM": 0.89}`.
+                Note that the metrics are averages computed over all given images.
+        """
+        all_eval_scores = []
+
+        for ind, evaluator in enumerate(self.evaluators):
+            all_eval_scores.append(evaluator.result())
+        
+        eval_score = {}
+        for key in all_eval_scores[0].keys():
+            eval_score[key] = torch.stack([score[key] for score in all_eval_scores])
+        
+        return eval_score
+        
+
+
+
 
 class GeneratorEvaluator:
     def __init__(

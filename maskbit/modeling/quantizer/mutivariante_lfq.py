@@ -5,15 +5,15 @@ from typing import Mapping, Text, Tuple
 import torch
 from einops import rearrange, reduce
 
-# from modeling.quantizer.quantizer_utils import entropy_loss_fn
-from quantizer_utils import entropy_loss_fn
+from modeling.quantizer.quantizer_utils import entropy_loss_fn
+
 
 
 class MultivariantLFQ(torch.nn.Module):
     def __init__(
         self,
         token_size: int = 10,
-        levels: int = 3,
+        variants: int = 3,
         scale: float = 1.0,
         commitment_cost: float = 0.25,
         entropy_loss_weight: float = 0.1,
@@ -23,6 +23,7 @@ class MultivariantLFQ(torch.nn.Module):
         """ Initializes the lookup-free quantizer.
 
         Args:
+            variants -> int: The number of variants for the codebook entries, 2 for binary (-1,1).
             token_size -> int: The number of bits per token.
             commitment_cost -> float: The commitment cost.
             entropy_loss_weight -> float: The weight of the entropy loss.
@@ -31,9 +32,9 @@ class MultivariantLFQ(torch.nn.Module):
         """
         super().__init__()
         self.token_size = token_size
-        self.levels = levels
+        self.levels = variants
         self.register_buffer("scale", torch.tensor(scale, dtype=torch.float32))
-        self.codebook_size = levels ** token_size
+        self.codebook_size = variants ** token_size
 
         self.commitment_cost = commitment_cost
         self.entropy_loss_weight = entropy_loss_weight

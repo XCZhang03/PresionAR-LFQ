@@ -5,20 +5,17 @@ from typing import Mapping, Text, Tuple
 import torch
 from einops import rearrange, reduce
 
-# from modeling.quantizer.lookup_free import LookupFreeQuantizer
-# from modeling.quantizer.mutivariante_lfq import MultivariantLFQ
+from modeling.quantizer.lookup_free import LookupFreeQuantizer
+from modeling.quantizer.mutivariante_lfq import MultivariantLFQ
 
-from lookup_free import LookupFreeQuantizer
-from mutivariante_lfq import MultivariantLFQ
 
 class ResidualLFQ(torch.nn.Module):
     def __init__(
             self,
             token_size: int = 10,
             num_quantizers: int = 2,
+            variants: list[int] = [2,3],
             scales: Tuple[float, ...] = None,
-            dropout_schedule: str = "uniform",
-            
             commitment_cost: float = 0.25,
             entropy_loss_weight: float = 0.1,
             entropy_loss_temperature: float = 0.01,
@@ -27,7 +24,6 @@ class ResidualLFQ(torch.nn.Module):
         super().__init__()
         self.token_size = token_size
         self.num_quantizers = num_quantizers
-        self.dropout_schedule = dropout_schedule
         self.commitment_cost = commitment_cost
         self.entropy_loss_weight = entropy_loss_weight
         self.entropy_loss_temperature = entropy_loss_temperature
@@ -58,17 +54,18 @@ class ResidualLFQ(torch.nn.Module):
                     entropy_loss_temperature=entropy_loss_temperature,
                     entropy_gamma=entropy_gamma,
                     scale = self.scales[ind],
-                    levels=3,
+                    variants=variants[ind],
                 )
             )
 
         self.quantizers = torch.nn.ModuleList(self.quantizers)
     
-    def forward(self, z: torch.Tensor) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
+    def forward(self, z: torch.Tensor, num_levels: int=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
         """ Forward pass of the quantizer.
 
         Args:
             z -> torch.Tensor: The input tensor. shape: (b, c, h, w)
+            num_levels -> int: The number of levels to quantize the input tensor to. range: [1, num_quantizers]
 
         Returns:
             z_quantized -> torch.Tensor: The quantized latent representation.
@@ -80,8 +77,11 @@ class ResidualLFQ(torch.nn.Module):
 
         all_results = []
         
-
-        for ind, quantizer in enumerate(self.quantizers):
+        if num_levels is None:
+            num_levels = self.num_quantizers 
+        else:
+            assert num_levels <= self.num_quantizers
+        for ind, quantizer in enumerate(self.quantizers[:num_levels]):
             z_quantized, result_dict = quantizer(residual)
             all_results.append(result_dict)
             quantized_out = quantized_out + z_quantized
@@ -89,6 +89,11 @@ class ResidualLFQ(torch.nn.Module):
         
         all_result_dict = {}
         all_result_dict = {key: torch.stack([result_dict[key] for result_dict in all_results], dim=0) for key in all_results[0].keys()}
+
+        # sum the losses
+        all_result_dict["quantizer_loss"] = all_result_dict["quantizer_loss"].sum(dim=0)
+        all_result_dict["commitment_loss"] = all_result_dict["commitment_loss"].sum(dim=0)
+        all_result_dict["entropy_loss"] = all_result_dict["entropy_loss"].sum(dim=0)
 
         # ## debug the gradient
         # grad = torch.autograd.grad(quantized_out.sum(), z, create_graph=True)[0]
@@ -112,13 +117,13 @@ class ResidualLFQ(torch.nn.Module):
         for ind in indices.shape[0]:
             tokens = self.quantizers[ind].get_codebook_entry(indices[ind])
             all_tokens.append(tokens)
-        return torch.stack(all_tokens, dim=0)
+        return torch.stack(all_tokens, dim=0).sum(dim=0)
 
 
 
         
 if __name__ == "__main__":
-    quantizer = ResidualLFQ()
+    quantizer = ResidualLFQ(num_quantizers=3)
     z = torch.randn(1, 10, 32, 32).requires_grad_()
     quantized, outputs = quantizer(z)
     for key, value in outputs.items():
