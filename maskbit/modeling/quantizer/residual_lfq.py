@@ -36,16 +36,16 @@ class ResidualLFQ(torch.nn.Module):
             self.scales = [2 ** -ind for ind in range(num_quantizers)]
 
         self.quantizers = []
-        self.quantizers.append(
-            LookupFreeQuantizer(
-                token_bits=token_size,
-                commitment_cost=commitment_cost,
-                entropy_loss_weight=entropy_loss_weight,
-                entropy_loss_temperature=entropy_loss_temperature,
-                entropy_gamma=entropy_gamma,
-            )
-        )
-        for ind in range(1, num_quantizers):
+        # self.quantizers.append(
+        #     LookupFreeQuantizer(
+        #         token_bits=token_size,
+        #         commitment_cost=commitment_cost,
+        #         entropy_loss_weight=entropy_loss_weight,
+        #         entropy_loss_temperature=entropy_loss_temperature,
+        #         entropy_gamma=entropy_gamma,
+        #     )
+        # )
+        for ind in range(num_quantizers):
             self.quantizers.append(
                 MultivariantLFQ(
                     token_size=token_size,
@@ -91,9 +91,9 @@ class ResidualLFQ(torch.nn.Module):
         all_result_dict = {key: torch.stack([result_dict[key] for result_dict in all_results], dim=0) for key in all_results[0].keys()}
 
         # sum the losses
-        all_result_dict["quantizer_loss"] = all_result_dict["quantizer_loss"].sum(dim=0)
-        all_result_dict["commitment_loss"] = all_result_dict["commitment_loss"].sum(dim=0)
-        all_result_dict["entropy_loss"] = all_result_dict["entropy_loss"].sum(dim=0)
+        all_result_dict["quantizer_loss"] = all_result_dict["quantizer_loss"].mean(dim=0)
+        all_result_dict["commitment_loss"] = all_result_dict["commitment_loss"].mean(dim=0)
+        all_result_dict["entropy_loss"] = all_result_dict["entropy_loss"].mean(dim=0)
 
         # ## debug the gradient
         # grad = torch.autograd.grad(quantized_out.sum(), z, create_graph=True)[0]
@@ -113,10 +113,10 @@ class ResidualLFQ(torch.nn.Module):
         Returns:
             codebook_entry -> torch.Tensor: The codebook entry.
         """
-        all_tokens = []
-        for ind in indices.shape[0]:
-            tokens = self.quantizers[ind].get_codebook_entry(indices[ind])
-            all_tokens.append(tokens)
+        N, B, *_ = indices.shape
+        assert N <= self.num_quantizers
+        indices = torch.chunk(indices, chunks=N, dim=0)
+        all_tokens = [quantizer.get_codebook_entry(index.squeeze(0)) for quantizer, index in zip(self.quantizers, indices)]
         return torch.stack(all_tokens, dim=0).sum(dim=0)
 
 

@@ -32,6 +32,7 @@ class SimpleVectorizer(torch.nn.Module):
 
         super().__init__()
         self.commitment_cost = commitment_cost
+        self.codebook_size = codebook_size
 
         self.embedding = torch.nn.Embedding(codebook_size, token_size)
         self.embedding.weight.data.uniform_(-1.0 / codebook_size, 1.0 / codebook_size)

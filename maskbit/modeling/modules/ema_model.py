@@ -68,7 +68,7 @@ class EMAModel:
     @classmethod
     def from_pretrained(cls, checkpoint, model_cls, **model_config_kwargs) -> "EMAModel":
         model = model_cls(**model_config_kwargs)
-        model.load_pretrained(checkpoint)
+        model.load_pretrained(checkpoint, strict_loading=False)
 
         ema_model = cls(model.parameters(), model_cls=model_cls, **model_config_kwargs)
         return ema_model

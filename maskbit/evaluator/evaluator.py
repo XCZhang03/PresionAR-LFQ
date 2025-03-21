@@ -483,7 +483,7 @@ class ResidualTokenizerEvaluator:
     ):
         
         self.evaluators = []
-        for ind in num_quantizers: 
+        for ind in range(num_quantizers): 
             self.evaluators.append(
                 TokenizerEvaluator(
                     device=device,
@@ -521,16 +521,13 @@ class ResidualTokenizerEvaluator:
                 and the values are the corresponding results. For example, `{"PSNR": 32.1, "SSIM": 0.89}`.
                 Note that the metrics are averages computed over all given images.
         """
-        all_eval_scores = []
+        all_eval_scores = {}
 
         for ind, evaluator in enumerate(self.evaluators):
-            all_eval_scores.append(evaluator.result())
-        
-        eval_score = {}
-        for key in all_eval_scores[0].keys():
-            eval_score[key] = torch.stack([score[key] for score in all_eval_scores])
-        
-        return eval_score
+            eval_score = evaluator.result()
+            for key, value in eval_score.items():
+                all_eval_scores[f"level{ind}/{key}"] = value
+        return all_eval_scores
         
 
 

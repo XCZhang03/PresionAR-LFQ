@@ -10,6 +10,7 @@ from modeling.modules import (BaseModel, ConvDecoder, ConvDecoderLegacy,
                               ConvEncoder)
 # from modeling.quantizer import LookupFreeQuantizer, SimpleVectorizer
 from modeling.quantizer.residual_lfq import ResidualLFQ
+from modeling.quantizer.residual_quantizer import ResidualQuantizer
 
 
 def choose_vector_quantizer_class(config):
@@ -24,6 +25,18 @@ def choose_vector_quantizer_class(config):
             config.entropy_loss_temperature,
             config.entropy_gamma,
         )
+    elif config.quantizer_type == "residual":
+        return ResidualQuantizer(
+            config.num_quantizers,
+            config.codebook_size,
+            config.token_size,
+            config.commitment_cost,
+            config.entropy_loss_weight,
+            config.entropy_loss_temperature,
+            config.entropy_gamma,
+            config.get("use_l2_normalisation", False),
+        )
+
 
 class RQModel(BaseModel):
     def __init__(
@@ -91,13 +104,13 @@ class RQModel(BaseModel):
         """ Decodes from tokens, i.e. runs the decoder after converting tokens to latent representations.
 
         Args:
-            tokens -> torch.Tensor: The token indices. shape: (n, b, h, w)
+            tokens -> torch.Tensor: The token indices. shape: (n, b, h, w) or (n, b, h*w)
 
         Returns:
             decoded -> torch.Tensor: The decoded image.
         """
-        z_quantized = self.quantize.get_codebook_entry(tokens)
-        ss = int(math.sqrt(float(z_quantized.size(1))))
+        z_quantized = self.quantize.get_codebook_entry(tokens) ## (b, h, w, c) or (b, h*w, c)
+        ss = int(math.sqrt(float(z_quantized.size(1)))) if len(z_quantized.shape) <= 3 else int(z_quantized.size(1))
         z_quantized = z_quantized.reshape(z_quantized.size(0), ss, ss, -1)
         z_quantized = rearrange(z_quantized, 'b h w c -> b c h w').contiguous()
         decoded = self.decode(z_quantized)
@@ -148,14 +161,24 @@ class RQModel(BaseModel):
 
 if __name__ == "__main__":
     from omegaconf import OmegaConf
-    config = OmegaConf.load("maskbit/configs/tokenizer/rqbit_tokenizer_10bit.yaml").model.vq_model
+    config = OmegaConf.load("configs/tokenizer/rqbit_tokenizer_10bit.yaml").model.vq_model
     model = RQModel(config)
     print(model)
     print(model.codebook_size)
     image = torch.randn(2, 3, 256, 256)
     z_quantized, result_dict = model.encode(image,num_levels=1)
     print(z_quantized.shape)
+    decoded_tokens = model.decode_tokens(result_dict["min_encoding_indices"])
+    print(decoded_tokens.shape)
     decoded = model.decode(z_quantized)
     print(decoded.shape)
+    print(torch.abs(decoded - decoded_tokens).max().item())
+    # assert torch.allclose(decoded, decoded_tokens, atol=1e-6)
     decoded, result_dict = model(image,num_levels=1)
-    print(decoded.shape)
+    # assert torch.allclose(decoded, decoded_tokens, atol=1e-6)
+    print(torch.abs(decoded - decoded_tokens).max().item())
+    tokens = torch.randint(0, model.codebook_size[0], (3, 2, 256))
+    decoded_tokens = model.decode_tokens(tokens)
+    print(decoded_tokens.shape)
+
+

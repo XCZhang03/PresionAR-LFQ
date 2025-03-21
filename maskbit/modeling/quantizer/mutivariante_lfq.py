@@ -33,7 +33,7 @@ class MultivariantLFQ(torch.nn.Module):
         super().__init__()
         self.token_size = token_size
         self.levels = variants
-        self.register_buffer("scale", torch.tensor(scale, dtype=torch.float32))
+        self.register_buffer("scale", torch.tensor(scale, dtype=torch.float32), persistent=False)
         self.codebook_size = variants ** token_size
 
         self.commitment_cost = commitment_cost
@@ -42,13 +42,13 @@ class MultivariantLFQ(torch.nn.Module):
         self.entropy_gamma = entropy_gamma
 
         basis = torch.pow(self.levels, torch.arange(0, self.token_size, dtype=torch.float32))
-        self.register_buffer('basis', basis.int())
+        self.register_buffer('basis', basis.int(), persistent=False)
         
         self.shift = self.levels // 2 if self.levels % 2 == 1 else self.levels - 1
         self.mult = 2 if self.levels % 2 == 0 else 1
         
         codebook = self.convert_indices_to_tokens(torch.arange(self.codebook_size))
-        self.register_buffer('codebook', codebook)
+        self.register_buffer('codebook', codebook, persistent=False)
         
     def normalize(self, z: torch.Tensor) -> torch.Tensor:
         """ Normalizes the input tensor.

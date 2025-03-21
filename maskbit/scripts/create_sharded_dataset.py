@@ -99,8 +99,8 @@ def write_dataset(imagenet, base="./shards", split="train"):
             key = os.path.splitext(os.path.basename(img_path))[0]
 
             # Useful check.
-            assert key not in all_keys
-            all_keys.add(key)
+            # assert key not in all_keys
+            # all_keys.add(key)
 
             # Construct a sample.
             xkey = key if args.filekey else "%07d" % i

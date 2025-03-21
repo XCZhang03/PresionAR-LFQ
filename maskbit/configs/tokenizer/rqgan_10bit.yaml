@@ -1,27 +1,26 @@
 experiment:
-    project: "RQGAN"
-    name: "rqbit_tokenizer_10bit"
+    project: "MaskBit"
+    name: "rqgan_10bit"
     max_train_examples: 1_281_167 # total number of imagenet examples
     save_every: 100
     eval_every: 100
-    generate_every: 100
+    generate_every: 200
     log_every: 50
     log_grad_norm_every: 100_000
-    logger: "wandb"
-    # logger: "tensorboard"
+    logger: "tensorboard"
     resume: True
-    init_checkpoint: ""
-    # init_checkpoint: "outputs/rqbit_tokenizer_10bit/2025-03-17 08:26:26/checkpoint-100"
-    debug: True
-    # vqgan_checkpoint: "MODEL_PATH/maskbit_tokenizer_10bit.bin"  # Only for evaluating a trained model
+    # init_checkpoint: ""
+    init_checkpoint: "debug/outputs/rqgan_10bit/2025-03-17 14:15:34/checkpoint-100"
+    # vqgan_checkpoint: "MODEL_PATH/vqgan_plus_10bit.bin"  # Only for evaluating a trained model
 
 model:
     vq_model:
         model_class: "rqgan"
-        quantizer_type: "residual_lfq"
-        token_size: 10
+        quantizer_type: "residual"
+        codebook_size: 1024
+        token_size: 256
         commitment_cost: 0.25
-        entropy_loss_weight: 0.02
+        entropy_loss_weight: 0.0
         entropy_loss_temperature: 0.01
         entropy_gamma: 1.0
         num_channels: 3  # rgb
@@ -32,10 +31,7 @@ model:
         sample_with_conv: True
 
         ## residual quantization
-        num_quantizers: 1
-        scales: null 
-        variants: [2,]
-
+        num_quantizers: 3
 
     discriminator:
         name: "VQGAN+Discriminator"
@@ -61,7 +57,7 @@ losses:
     discriminator_penalty_cost: 10.0
     lecam_regularization_weight: 0.001
     entropy_annealing_steps: 2000
-    entropy_annealing_factor: 2.0
+    entropy_annealing_factor: 0.0
 
 dataset:
     params:

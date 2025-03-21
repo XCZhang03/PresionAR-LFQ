@@ -9,6 +9,8 @@ from collections import defaultdict
 import pprint
 import glob
 
+import pdb
+
 from accelerate.utils import DistributedType, set_seed
 from accelerate import Accelerator
 from accelerate.logging import get_logger
@@ -27,6 +29,7 @@ from evaluator.evaluator import ResidualTokenizerEvaluator
 from utils.viz_utils import make_viz_from_samples
 
 from torchinfo import summary
+from time import strftime, localtime
 
 
 def get_config():
@@ -42,8 +45,9 @@ def main():
     #########################
     # SETUP Accelerator     #
     #########################
-    ckpt_dir = os.environ.get('WORKSPACE', './runs')
-
+    work_dir = os.environ.get('WORKSPACE', './runs')
+    cur_time = strftime("%Y-%m-%d %H:%M:%S", localtime())
+    
     config = get_config()
 
     # Enable TF32 on Ampere GPUs
@@ -52,9 +56,10 @@ def main():
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = False
 
-    output_dir = os.path.join(ckpt_dir, "outputs", config.experiment.name)
+    output_dir = os.path.join(work_dir, "outputs", config.experiment.name, cur_time)
+    # output_dir = os.path.join(work_dir, "outputs", config.experiment.name)   # do not set time if experiment may be resumed
     config.experiment.logging_dir = str(Path(output_dir) / "logs")
-
+    
     if config.experiment.logger not in ("wandb", "tensorboard"):
         raise ValueError(f"{config.experiment.logger} is not supported. Please choose `wandb` or `tensorboard`.")
 
@@ -556,9 +561,8 @@ def eval_reconstruction(
     model.eval()
     evaluator.reset_metrics()
     local_model = accelerator.unwrap_model(model)
-
     for batch in eval_loader:
-        for level in range(local_model.num_quantizers):
+        for level in range(local_model.quantize.num_quantizers):
             images = batch["image"].to(
                 accelerator.device, memory_format=torch.contiguous_format, non_blocking=True
             )
@@ -566,9 +570,7 @@ def eval_reconstruction(
             reconstructed_images, model_dict = local_model(images, num_levels=level + 1)
             reconstructed_images = torch.clamp(reconstructed_images, 0.0, 1.0)
             original_images = torch.clamp(original_images, 0.0, 1.0)
-
             evaluator.update(level, original_images, reconstructed_images, model_dict["min_encoding_indices"])
-
     model.train()
     return evaluator.result()
 
