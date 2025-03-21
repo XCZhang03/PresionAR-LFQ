@@ -12,7 +12,6 @@ experiment:
     resume: True
     init_checkpoint: ""
     # init_checkpoint: "outputs/rqbit_tokenizer_10bit/2025-03-17 08:26:26/checkpoint-100"
-    debug: True
     # vqgan_checkpoint: "MODEL_PATH/maskbit_tokenizer_10bit.bin"  # Only for evaluating a trained model
 
 model:

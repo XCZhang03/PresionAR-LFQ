@@ -4,6 +4,8 @@ cd ./maskbit
 ```
 2. prepare the env
 ```shell
+conda create -n maskbit python=3.11
+conda activate maskbit
 pip install -r requirements.txt
 pip install -e .
 ```
@@ -25,7 +27,8 @@ ds = ImageNet("./data")
 
 Prepare the dataset shards
 ```shell
-python scripts/create_sharded_dataset.py
+mkdir ./shards
+python scripts/create_sharded_dataset.py --data="./data" --shards="./shards"
 ```
 
 If the resulting data is not in ``maskbit/shards``, modify the path in ``config.dataset`` where config is the config file in the train script
@@ -35,6 +38,8 @@ If the resulting data is not in ``maskbit/shards``, modify the path in ``config.
 wandb init
 ```
 api key ``78319f33ffd79b3480286266fd8ba1f9c5bc3dab``
+choose a project randomly, the project name is determined in the training script
+
 
 6. run training script. change the num processes if necessary
 ```shell
