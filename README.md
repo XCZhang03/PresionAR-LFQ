@@ -31,7 +31,7 @@ mkdir ./shards
 python scripts/create_sharded_dataset.py --data="./data" --shards="./shards"
 ```
 
-If the resulting data is not in ``maskbit/shards``, modify the path in ``config.dataset`` where config is the config file in the train script
+If the resulting data is not in ``maskbit/shards``, modify the path in ``run_slurm.sh`` to be the path for data shards
 
 5. Prepare wandb
 ```shell
