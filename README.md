@@ -1,4 +1,4 @@
-1. cd into the maskbit dir 
+1. cd into the maskbit dir. All the codes are currently in maskbit dir
 ```shell
 cd ./maskbit
 ```
@@ -43,7 +43,7 @@ choose a project randomly, the project name is determined in the training script
 
 6. run training script. change the num processes if necessary
 ```shell
-bash train.sh
+bash run_slurm.sh
 ```
 
     
