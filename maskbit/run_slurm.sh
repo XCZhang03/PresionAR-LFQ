@@ -32,14 +32,20 @@ export LAUNCHER="accelerate launch \
     "
 export ACCELERATE_DIR="$/home/linhw/zxc/PresionAR-LFQ/maskbit"
 export SCRIPT="${ACCELERATE_DIR}/sscripts/train_res_tokenizer.py"
-export SCRIPT_ARGS=" \
-    --config maskbit/configs/tokenizer/rqbit_tokenizer_10bit.yaml
-    --training.per_gpu_batch_size  32 \
-    --training.max_train_steps 300_000 \
-    --training.mixed_precision "no" \
-    --dataset.params.train_shards_path_or_url "./shards/train/imagenet-train-{0000..0009}.tar " \
+
+## change the batch size according to GPU memory
+SCRIPT_ARGS="
+    config=${ACCELERATE_DIR}/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
+    training.per_gpu_batch_size=32 \ 
+    training.max_train_steps=300_000 \
+    training.mixed_precision='no' \
+    dataset.params.train_shards_path_or_url=./shards/train/imagenet-train-{0000..0252}.tar  \
+    dataset.params.val_shards_path_or_url=./shards/val/imagenet-val-{0000..0009}.tar \
+    experiment.save_every=20_000 \
+    experiment.generate_every=2000 \
+    experiment.eval_every=20_000 
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly
-export CMD="$LAUNCHER $PYTHON_FILE $ARGS" 
+CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
 srun $CMD
