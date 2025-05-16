@@ -23,6 +23,7 @@ Transform the tar file into torchivision datasets format
 from torchvision.datasets import ImageNet
 
 ds = ImageNet("./data")
+ds_val = ImageNet("/data", split='val')
 ```
 
 Prepare the dataset shards
