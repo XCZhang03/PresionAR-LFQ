@@ -7,5 +7,6 @@
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
 
 cd /n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit
+source ~/miniconda3/etc/profile.d/conda.sh
 conda activate maskbit
 python scripts/create_sharded_dataset.py --data="./data" --shards="./shards" 
