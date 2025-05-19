@@ -294,7 +294,7 @@ def main():
     # Note: We are not doing epoch based training here, but just using this for book keeping and being able to
     # reuse the same training loop with other datasets/loaders.
     num_train_epochs = math.ceil(config.training.max_train_steps / num_update_steps_per_epoch)
-    import os
+    # import os
     import torch.distributed as dist
 
     def check_distributed_status():
