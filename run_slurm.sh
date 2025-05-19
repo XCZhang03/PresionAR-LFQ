@@ -26,6 +26,7 @@ GPUS_PER_NODE=1
 head_node_hostname=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 head_node_ip=$(getent hosts $head_node_hostname | awk '{ print $1 }')
 echo "head_node_ip: $head_node_ip"
+echo "head_node_hostname: $head_node_hostname"
 # Use Infiniband interface for distributed backend
 export GLOO_SOCKET_IFNAME=ib0
 export NCCL_SOCKET_IFNAME=ib0
