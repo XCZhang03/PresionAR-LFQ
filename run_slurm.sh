@@ -31,6 +31,7 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 echo "NUM_PROCESSES: $NUM_PROCESSES"
 
 LAUNCHER="accelerate launch \
+    --multi_gpu \
     --num_processes $NUM_PROCESSES \
     --num_machines $NNODES \
     --main_process_ip $head_node_ip \
