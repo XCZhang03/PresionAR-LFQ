@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=vae-1
-#SBATCH -p gpu
+#SBATCH -p gpu_test
 #SBATCH --mem=50G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
@@ -44,6 +44,8 @@ ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-L
 
 CMD="accelerate launch \
     --multi_gpu \
+    --same_network \
+    --rdzv_backend "static" \
     --num_processes $NUM_PROCESSES \
     --num_machines $NNODES \
     --main_process_ip $MASTER_ADDR \
