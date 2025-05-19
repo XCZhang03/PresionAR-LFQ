@@ -11,7 +11,7 @@ LAUNCHER="accelerate launch \
     --num_processes $((1 * GPUS_PER_NODE)) \
     --num_machines 1 \
     "
-ACCELERATE_DIR="/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-LFQ/maskbit"
+ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PrecisionAR-LFQ/maskbit"
 
 cd $ACCELERATE_DIR
 
