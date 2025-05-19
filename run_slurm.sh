@@ -8,9 +8,8 @@
 #SBATCH -o status/myoutput_%j.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --nodes=2                   # number of nodes
-#SBATCH --ntasks-per-node=1         # number of MP tasks
+
 #SBATCH --gres=gpu:nvidia_a100-pcie-40gb:4                # number of GPUs per node
-#SBATCH --cpus-per-task=160         # number of cores per tasks
 #SBATCH -t 0-01:00                  # maximum execution time (HH:MM:SS)
 
 ######################
