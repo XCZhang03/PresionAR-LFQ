@@ -11,6 +11,7 @@
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --gres=gpu:1                # number of GPUs per node
 #SBATCH -t 0-01:00                  # maximum execution time (HH:MM:SS)
+#SBATCH --continguous
 
 ######################
 ### Set enviroment ###
@@ -54,4 +55,9 @@ CMD="accelerate launch \
 
 echo "CMD: $CMD"
 
-srun --export=ALL,MASTER_ADDR=$MASTER_ADDR,MASTER_PORT=$MASTER_PORT,GLOO_SOCKET_IFNAME=$GLOO_SOCKET_IFNAME,NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME $CMD
+srun env \
+    MASTER_ADDR=$MASTER_ADDR \
+    MASTER_PORT=$MASTER_PORT \
+    GLOO_SOCKET_IFNAME=$GLOO_SOCKET_IFNAME \
+    NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME \
+    $CMD
