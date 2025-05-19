@@ -35,7 +35,7 @@ LAUNCHER="accelerate launch \
     "
 ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
 cd $ACCELERATE_DIR
-SCRIPT="${ACCELERATE_DIR}/sscripts/train_res_tokenizer.py"
+SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
 
 ## change the batch size according to GPU memory
 SCRIPT_ARGS="
