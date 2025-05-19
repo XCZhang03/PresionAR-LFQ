@@ -7,7 +7,7 @@
 #SBATCH --mail-user=504985967@qq.com
 #SBATCH -o status/myoutput_%j.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
-#SBATCH --nodes=2                   # number of nodes
+#SBATCH --nodes=1                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --gres=gpu:2                # number of GPUs per node
 #SBATCH -t 0-01:00                  # maximum execution time (HH:MM:SS)
@@ -36,6 +36,7 @@ LAUNCHER="accelerate launch \
     --main_process_ip $head_node_ip \
     --main_process_port 29500 \
     --machine_rank $SLURM_PROCID \
+
     "
 ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
 cd $ACCELERATE_DIR
