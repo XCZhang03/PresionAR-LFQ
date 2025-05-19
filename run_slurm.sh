@@ -31,7 +31,7 @@ LAUNCHER="accelerate launch \
     --rdzv_backend c10d \
     --main_process_ip $head_node_ip \
     --main_process_port 29500 \
-    --machine_rank \$SLURM_PROCID \
+    --machine_rank $SLURM_PROCID \
     "
 ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
 cd $ACCELERATE_DIR
