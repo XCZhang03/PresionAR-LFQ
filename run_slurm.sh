@@ -9,7 +9,7 @@
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --nodes=2                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
-#SBATCH --gres=gpu:1                # number of GPUs per node
+#SBATCH --gres=gpu:4                # number of GPUs per node
 #SBATCH -t 0-01:00                  # maximum execution time (HH:MM:SS)
 
 ######################
@@ -40,14 +40,7 @@ SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
 ## change the batch size according to GPU memory
 SCRIPT_ARGS="
     config=${ACCELERATE_DIR}/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
-    training.per_gpu_batch_size=8 \ 
-    training.max_train_steps=1_350_000 \
-    training.mixed_precision='no' \
-    dataset.params.train_shards_path_or_url=./shards/train/imagenet-train-{0000..0252}.tar  \
-    dataset.params.val_shards_path_or_url=./shards/val/imagenet-val-{0000..0009}.tar \
-    experiment.save_every=20_000 \
-    experiment.generate_every=2000 \
-    experiment.eval_every=20_000 
+    training.per_gpu_batch_size=8 \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly

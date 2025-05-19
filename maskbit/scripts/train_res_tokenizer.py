@@ -294,7 +294,22 @@ def main():
     # Note: We are not doing epoch based training here, but just using this for book keeping and being able to
     # reuse the same training loop with other datasets/loaders.
     num_train_epochs = math.ceil(config.training.max_train_steps / num_update_steps_per_epoch)
+    import os
+    import torch.distributed as dist
 
+    def check_distributed_status():
+        print(f"HOSTNAME: {os.uname().nodename}")
+        print(f"RANK: {os.environ.get('RANK')}")
+        print(f"WORLD_SIZE: {os.environ.get('WORLD_SIZE')}")
+        print(f"LOCAL_RANK: {os.environ.get('LOCAL_RANK')}")
+        print(f"MASTER_ADDR: {os.environ.get('MASTER_ADDR')}")
+        
+        if dist.is_initialized():
+            print(f"Distributed initialized with rank {dist.get_rank()} of {dist.get_world_size()}")
+        else:
+            print("Distributed not initialized")
+
+    check_distributed_status()
     # Train!
     logger.info("***** Running training *****")
     logger.info(f"  Num training steps = {config.training.max_train_steps}")
