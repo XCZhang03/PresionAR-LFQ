@@ -9,14 +9,14 @@
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --nodes=2                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
-#SBATCH --gres=gpu:1                # number of GPUs per node
+#SBATCH --gres=gpu:2                # number of GPUs per node
 #SBATCH -t 0-01:00                  # maximum execution time (HH:MM:SS)
 
 ######################
 ### Set enviroment ###
 ######################
 source activateEnvironment.sh
-GPUS_PER_NODE=1
+GPUS_PER_NODE=2
 ######################
 
 ######################
@@ -26,10 +26,13 @@ head_node_ip=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 ######################
 echo "SLURM_NNODES: $SLURM_NNODES"
 echo "SLURM_PROCID: $SLURM_PROCID"
+NNODES=$SLURM_NNODES
+NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
+echo "NUM_PROCESSES: $NUM_PROCESSES"
+
 LAUNCHER="accelerate launch \
-    --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
-    --num_machines $SLURM_NNODES \
-    --rdzv_backend c10d \
+    --num_processes $NUM_PROCESSES \
+    --num_machines $NNODES \
     --main_process_ip $head_node_ip \
     --main_process_port 29500 \
     --machine_rank $SLURM_PROCID \
