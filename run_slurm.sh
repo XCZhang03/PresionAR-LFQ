@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=vae-1
 #SBATCH -p gpu_test
-#SBATCH --mem=5G
+#SBATCH --mem=50G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
 #SBATCH -o status/myoutput_%j.out  # File to which STDOUT will be written, %j inserts jobid
