@@ -41,7 +41,7 @@ echo "NUM_PROCESSES: $NUM_PROCESSES"
 
 ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
 
-CMD="srun accelerate launch \
+CMD="accelerate launch \
     --multi_gpu \
     --num_processes $NUM_PROCESSES \
     --num_machines $NNODES \
@@ -54,4 +54,4 @@ CMD="srun accelerate launch \
 
 echo "CMD: $CMD"
 
-$CMD
+srun --export=ALL,MASTER_ADDR=$MASTER_ADDR,MASTER_PORT=$MASTER_PORT,GLOO_SOCKET_IFNAME=$GLOO_SOCKET_IFNAME,NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME $CMD
