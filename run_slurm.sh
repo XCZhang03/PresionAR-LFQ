@@ -37,25 +37,17 @@ NNODES=$SLURM_NNODES
 NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 echo "NUM_PROCESSES: $NUM_PROCESSES"
 
-LAUNCHER="accelerate launch \
+ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
+
+CMD="srun accelerate launch \
     --multi_gpu \
     --num_processes $NUM_PROCESSES \
     --num_machines $NNODES \
     --main_process_ip $head_node_ip \
     --main_process_port 29500 \
     --machine_rank $SLURM_PROCID \
+    $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
+    config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
+    training.per_gpu_batch_size=8"
 
-    "
-ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
-cd $ACCELERATE_DIR
-SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
-
-## change the batch size according to GPU memory
-SCRIPT_ARGS="
-    config=${ACCELERATE_DIR}/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
-    training.per_gpu_batch_size=8 \
-    "
-    
-# This step is necessary because accelerate launch does not handle multiline arguments properly
-CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
-eval "srun $CMD"
+$CMD
