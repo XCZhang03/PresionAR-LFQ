@@ -2,9 +2,9 @@ experiment:
     project: "RQGAN"
     name: "rqbit_tokenizer_10bit"
     max_train_examples: 1_281_167 # total number of imagenet examples
-    save_every: 100
-    eval_every: 100
-    generate_every: 100
+    save_every: 20_000
+    eval_every: 20_000
+    generate_every: 2000
     log_every: 50
     log_grad_norm_every: 100_000
     logger: "wandb"
@@ -104,7 +104,7 @@ training:
     enable_tf32: True
     use_ema: True
     seed: 42
-    max_train_steps: 300_000
+    max_train_steps: 1_350_000
     overfit_batch: False
     overfit_batch_num: 1
     num_generated_images: 2  # Must be smaller than or equal to per_gpu_batch_size
