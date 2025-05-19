@@ -16,7 +16,7 @@
 ### Set enviroment ###
 ######################
 source activateEnvironment.sh
-GPUS_PER_NODE=2
+GPUS_PER_NODE=1
 ######################
 
 ######################
