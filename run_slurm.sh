@@ -16,7 +16,7 @@
 ### Set enviroment ###
 ######################
 source activateEnvironment.sh
-export GPUS_PER_NODE=4
+GPUS_PER_NODE=1
 ######################
 
 ######################
