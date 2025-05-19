@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=vae-1
-#SBATCH -p gpu_test
+#SBATCH -p gpu
 #SBATCH --mem=50G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
