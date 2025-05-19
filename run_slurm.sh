@@ -11,7 +11,7 @@
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --gres=gpu:1                # number of GPUs per node
 #SBATCH -t 0-01:00                  # maximum execution time (HH:MM:SS)
-#SBATCH --continguous
+#SBATCH --contiguous
 
 ######################
 ### Set enviroment ###
