@@ -45,4 +45,4 @@ SCRIPT_ARGS="
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly
 CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
-eval "srun $CMD"
+srun $CMD
