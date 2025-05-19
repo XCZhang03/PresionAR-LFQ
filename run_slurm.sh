@@ -24,7 +24,8 @@ GPUS_PER_NODE=1
 ######################
 head_node_ip=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 ######################
-
+echo "SLURM_NNODES: $SLURM_NNODES"
+echo "SLURM_PROCID: $SLURM_PROCID"
 LAUNCHER="accelerate launch \
     --num_processes $((SLURM_NNODES * GPUS_PER_NODE)) \
     --num_machines $SLURM_NNODES \
