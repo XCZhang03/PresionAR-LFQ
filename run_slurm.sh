@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=vae-1
-#SBATCH -p gpu
+#SBATCH -p gpu_test
 #SBATCH --mem=50G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
@@ -9,7 +9,7 @@
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --nodes=2                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
-#SBATCH --gres=gpu:2                # number of GPUs per node
+#SBATCH --gres=gpu:1                # number of GPUs per node
 #SBATCH -t 0-02:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 
@@ -17,7 +17,7 @@
 ### Set enviroment ###
 ######################
 source activateEnvironment.sh
-GPUS_PER_NODE=2
+GPUS_PER_NODE=1
 export LOG_LEVEL=INFO
 ######################
 
@@ -32,8 +32,8 @@ echo "head_node_hostname: $head_node_hostname"
 export MASTER_ADDR=$head_node_ip
 export MASTER_PORT=29500
 # Use Infiniband interface for distributed backend
-export GLOO_SOCKET_IFNAME=ib0
-export NCCL_SOCKET_IFNAME=ib0
+# export GLOO_SOCKET_IFNAME=ib0
+# export NCCL_SOCKET_IFNAME=ib0
 ######################
 echo "SLURM_NNODES: $SLURM_NNODES"
 echo "SLURM_PROCID: $SLURM_PROCID"
