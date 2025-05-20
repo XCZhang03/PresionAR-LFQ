@@ -41,25 +41,19 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 echo "NUM_PROCESSES: $NUM_PROCESSES"
 
 ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
+cd $ACCELERATE_DIR
 
-CMD="accelerate launch \
+srun bash -c "accelerate launch \
     --multi_gpu \
-    --same_network \
-    --rdzv_backend "static" \
+    --rdzv_backend c10d \
     --num_processes $NUM_PROCESSES \
     --num_machines $NNODES \
     --main_process_ip $MASTER_ADDR \
     --main_process_port $MASTER_PORT \
-    --machine_rank \$SLURM_PROCID \
+    --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
     training.per_gpu_batch_size=8"
 
-echo "CMD: $CMD"
 
-srun env \
-    MASTER_ADDR=$MASTER_ADDR \
-    MASTER_PORT=$MASTER_PORT \
-    GLOO_SOCKET_IFNAME=$GLOO_SOCKET_IFNAME \
-    NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME \
-    $CMD
+
