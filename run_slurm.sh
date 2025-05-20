@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=vae-1
-#SBATCH -p gpu_requeue
+#SBATCH -p gpu
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
@@ -9,7 +9,7 @@
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --nodes=2                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
-#SBATCH --gres=gpu:nvidia_a100-sxm4-80gb:2                # number of GPUs per node
+#SBATCH --gres=gpu:nvidia_a100-sxm4-80gb:4                # number of GPUs per node
 #SBATCH -t 2-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 
