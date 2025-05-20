@@ -17,7 +17,7 @@
 ### Set enviroment ###
 ######################
 source activateEnvironment.sh
-GPUS_PER_NODE=2
+GPUS_PER_NODE=4
 export LOG_LEVEL=INFO
 ######################
 
