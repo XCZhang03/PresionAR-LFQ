@@ -2,7 +2,7 @@ experiment:
     project: "RQGAN"
     name: "rqbit_tokenizer_10bit"
     max_train_examples: 1_281_167 # total number of imagenet examples
-    save_every: 20_000
+    save_every: 2_000  # use smaller interval for requeue
     eval_every: 20_000
     generate_every: 2000
     log_every: 50
