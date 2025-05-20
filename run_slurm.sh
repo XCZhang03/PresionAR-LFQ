@@ -26,11 +26,11 @@ export LOG_LEVEL=INFO
 ######################
 # head_node_ip=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 head_node_hostname=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
-head_node_ip=$(getent hosts $head_node_hostname | awk '{ print $1 }')
-echo "head_node_ip: $head_node_ip"
-echo "head_node_hostname: $head_node_hostname"
-export MASTER_ADDR=$head_node_ip
-export MASTER_PORT=29500
+# head_node_ip=$(getent hosts $head_node_hostname | awk '{ print $1 }')
+# echo "head_node_ip: $head_node_ip"
+# echo "head_node_hostname: $head_node_hostname"
+# export MASTER_ADDR=$head_node_ip
+# export MASTER_PORT=29500
 # Use Infiniband interface for distributed backend
 # export GLOO_SOCKET_IFNAME=ib0
 # export NCCL_SOCKET_IFNAME=ib0
@@ -49,8 +49,8 @@ srun bash -c "accelerate launch \
     --rdzv_backend c10d \
     --num_processes $NUM_PROCESSES \
     --num_machines $NNODES \
-    --main_process_ip $MASTER_ADDR \
-    --main_process_port $MASTER_PORT \
+    --main_process_ip $head_node_hostname \
+    --main_process_port 29500 \
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
