@@ -50,7 +50,7 @@ CMD="accelerate launch \
     --num_machines $NNODES \
     --main_process_ip $MASTER_ADDR \
     --main_process_port $MASTER_PORT \
-    --machine_rank $SLURM_PROCID \
+    --machine_rank \$SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
     training.per_gpu_batch_size=8"
