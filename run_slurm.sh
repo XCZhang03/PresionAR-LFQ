@@ -25,9 +25,9 @@ export LOG_LEVEL=INFO
 #### Set network #####
 ######################
 # head_node_ip=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
-head_node_hostname=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
+head_node_hostname="$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)"
 head_node_hostname="{$head_node_hostname}i"
-head_node_ip=$(getent hosts $head_node_hostname | awk '{ print $1 }')
+head_node_ip="$(nslookup "$MASTER_ADDR" | grep -oP '(?<=Address: ).*')"
 echo "head_node_ip: $head_node_ip"
 echo "head_node_hostname: $head_node_hostname"
 export MASTER_ADDR=$head_node_ip
