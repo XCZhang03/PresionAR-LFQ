@@ -9,7 +9,7 @@
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --nodes=2                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
-#SBATCH --gres=gpu:nvidia_a100-sxm4-80gb:1                # number of GPUs per node
+#SBATCH --gres=gpu:nvidia_a100-sxm4-80gb:2                # number of GPUs per node
 #SBATCH -t 2-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 
@@ -17,7 +17,7 @@
 ### Set enviroment ###
 ######################
 source activateEnvironment.sh
-GPUS_PER_NODE=1
+GPUS_PER_NODE=2
 export LOG_LEVEL=INFO
 ######################
 
