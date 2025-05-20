@@ -1,23 +1,23 @@
 #!/bin/bash
 
 #SBATCH --job-name=vae-1
-#SBATCH -p gpu_test
-#SBATCH --mem=50G
+#SBATCH -p gpu_requeue
+#SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
 #SBATCH -o status/myoutput_%j.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --nodes=2                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
-#SBATCH --gres=gpu:1                # number of GPUs per node
-#SBATCH -t 0-02:00                  # maximum execution time (HH:MM:SS)
+#SBATCH --gres=gpu:nvidia_a100-sxm4-80gb:4                # number of GPUs per node
+#SBATCH -t 2-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 
 ######################
 ### Set enviroment ###
 ######################
 source activateEnvironment.sh
-GPUS_PER_NODE=1
+GPUS_PER_NODE=4
 export LOG_LEVEL=INFO
 ######################
 
