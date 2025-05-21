@@ -32,7 +32,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
 cd $ACCELERATE_DIR
 
-srun bash -c "accelerate launch \
+srun bash -c "
+    accelerate launch \
     --multi_gpu \
     --rdzv_backend c10d \
     --num_processes $NUM_PROCESSES \
@@ -44,6 +45,7 @@ srun bash -c "accelerate launch \
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
     training.per_gpu_batch_size=8 \
     experiment.save_every=100 \
+    "
 
 
 
