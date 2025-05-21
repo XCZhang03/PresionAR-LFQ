@@ -327,7 +327,7 @@ def main():
         local_ckpt_list = list(glob.glob(os.path.join(output_dir, "checkpoints", "checkpoint*")))
         if len(local_ckpt_list) >= 1:
             if len(local_ckpt_list) > 1:
-                fn = lambda x: int(x.split('/')[-1].split('-')[-1])
+                fn = lambda x: int(x.split('/')[-1].split('_')[-1])
                 checkpoint_paths = sorted(local_ckpt_list, key=fn, reverse=True)
             else:  # len(local_ckpt_list) == 1
                 checkpoint_paths = local_ckpt_list
