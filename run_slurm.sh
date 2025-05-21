@@ -44,7 +44,7 @@ srun bash -c "
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
     training.per_gpu_batch_size=32 \
-    experiment.save_every=2000 \
+    experiment.save_every=20_000 \
     "
 
 
