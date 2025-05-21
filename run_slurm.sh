@@ -43,7 +43,7 @@ srun bash -c "accelerate launch \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
     training.per_gpu_batch_size=8" \
-    experitment.save_every=100 \
+    experiment.save_every=100 \
 
 
 
