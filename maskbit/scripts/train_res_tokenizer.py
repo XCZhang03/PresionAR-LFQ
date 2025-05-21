@@ -46,7 +46,8 @@ def get_save_iteration(project_dir):
     if os.path.exists(output_dir):
         checkpoint_list = list(glob.glob(os.path.join(output_dir, "checkpoint*")))
         if len(checkpoint_list) > 0:
-            fn = lambda x: int(x.split('/')[-1].split('-')[-1])
+            fn = lambda x: int(x.split('/')[-1].split('_')[-1])
+            breakpoint()
             checkpoint_indices = [fn(x) for x in checkpoint_list]
             return max(checkpoint_indices) + 1
     return 0
