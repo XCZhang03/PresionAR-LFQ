@@ -41,6 +41,16 @@ def get_config():
 
     return conf
 
+def get_save_iteration(project_dir):
+    output_dir = os.path.join(project_dir, "checkpoints")
+    if os.path.exists(output_dir):
+        checkpoint_list = list(glob.glob(os.path.join(output_dir, "checkpoint*")))
+        if len(checkpoint_list) > 0:
+            fn = lambda x: int(x.split('/')[-1].split('-')[-1])
+            checkpoint_indices = [fn(x) for x in checkpoint_list]
+            return max(checkpoint_indices) + 1
+    return 0
+
 
 def main():
     #########################
@@ -71,6 +81,7 @@ def main():
         project_dir=output_dir,
         automatic_checkpoint_naming=True,
         total_limit=2,
+        iteration=get_save_iteration(output_dir),
     )
 
     accelerator = Accelerator(
