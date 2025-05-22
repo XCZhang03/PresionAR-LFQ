@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-1
+#SBATCH --job-name=vae-2
 #SBATCH -p gpu
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
