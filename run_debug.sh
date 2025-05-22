@@ -1,5 +1,5 @@
 source activateEnvironment.sh
-GPUS_PER_NODE=1
+GPUS_PER_NODE=2
 ######################
 
 ######################
@@ -11,7 +11,7 @@ LAUNCHER="accelerate launch \
     --num_processes $((1 * GPUS_PER_NODE)) \
     --num_machines 1 \
     "
-ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
+ACCELERATE_DIR="/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-LFQ/maskbit"
 cd $ACCELERATE_DIR
 
 SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
@@ -19,7 +19,9 @@ SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
 ## change the batch size according to GPU memory
 SCRIPT_ARGS="
     config=${ACCELERATE_DIR}/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
-    training.per_gpu_batch_size=8 \ 
+    training.per_gpu_batch_size=8 \
+    dataset.params.train_shards_path_or_url=./shards/train/imagenet-train-{0000..0008}.tar \
+    dataset.params.eval_shards_path_or_url=./shards/imagenet-val-0009.tar \
     experiment.save_every=100 \
     experiment.generate_every=100 \
     experiment.eval_every=200   
