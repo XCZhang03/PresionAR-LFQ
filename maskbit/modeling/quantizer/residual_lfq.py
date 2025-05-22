@@ -1,12 +1,13 @@
 """This file contains the definition of the look-free residual quantizer."""
 
-from typing import Mapping, Text, Tuple
+from typing import Mapping, Text, Tuple, List, Union
 
 import torch
 from einops import rearrange, reduce
 
 from modeling.quantizer.lookup_free import LookupFreeQuantizer
 from modeling.quantizer.mutivariante_lfq import MultivariantLFQ
+from modeling.quantizer.quant_scheduler import agg_quantized
 
 
 class ResidualLFQ(torch.nn.Module):
@@ -28,6 +29,7 @@ class ResidualLFQ(torch.nn.Module):
         self.entropy_loss_weight = entropy_loss_weight
         self.entropy_loss_temperature = entropy_loss_temperature
         self.entropy_gamma = entropy_gamma
+        assert num_quantizers == len(variants)
 
         if scales:
             assert len(scales) == num_quantizers
@@ -60,7 +62,7 @@ class ResidualLFQ(torch.nn.Module):
 
         self.quantizers = torch.nn.ModuleList(self.quantizers)
     
-    def forward(self, z: torch.Tensor, num_levels: int=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
+    def forward(self, z: torch.Tensor, num_levels: Union[List,int]=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
         """ Forward pass of the quantizer.
 
         Args:
@@ -76,16 +78,28 @@ class ResidualLFQ(torch.nn.Module):
         residual = z
 
         all_results = []
+        quantized_list = []
+        bs = z.shape[0]
         
         if num_levels is None:
             num_levels = self.num_quantizers 
-        else:
-            assert num_levels <= self.num_quantizers
-        for ind, quantizer in enumerate(self.quantizers[:num_levels]):
+        if isinstance(num_levels, int):
+            num_levels = [num_levels] * bs
+        assert isinstance(num_levels, list)
+        assert len(num_levels) == bs
+        assert all([(num_levels[ind] <= self.num_quantizers and num_levels[ind] >= 1) for ind in range(bs)])
+
+
+
+        for ind, quantizer in enumerate(self.quantizers):
             z_quantized, result_dict = quantizer(residual)
             all_results.append(result_dict)
-            quantized_out = quantized_out + z_quantized
+            quantized_list.append(z_quantized)
+            # quantized_out = quantized_out + z_quantized
             residual = residual - z_quantized.detach()
+        
+        # aggregate the quantized tensors
+        quantized_out = agg_quantized(quantized_list, num_levels)
         
         all_result_dict = {}
         all_result_dict = {key: torch.stack([result_dict[key] for result_dict in all_results], dim=0) for key in all_results[0].keys()}
@@ -123,8 +137,8 @@ class ResidualLFQ(torch.nn.Module):
 
         
 if __name__ == "__main__":
-    quantizer = ResidualLFQ(num_quantizers=3)
-    z = torch.randn(1, 10, 32, 32).requires_grad_()
-    quantized, outputs = quantizer(z)
+    quantizer = ResidualLFQ(num_quantizers=3, variants=[2,3,3])
+    z = torch.randn(3, 10, 32, 32).requires_grad_()
+    quantized, outputs = quantizer(z, num_levels=[1, 2, 3])
     for key, value in outputs.items():
         print(key, value.shape)

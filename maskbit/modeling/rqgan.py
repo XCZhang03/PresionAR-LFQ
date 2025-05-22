@@ -1,7 +1,7 @@
 """This file contains the definition of the our tokenizer, which can use VQ or LFQ."""
 
 import math
-from typing import Mapping, Text, Tuple
+from typing import Mapping, Text, Tuple, List, Union
 
 import torch
 from einops import rearrange
@@ -72,12 +72,12 @@ class RQModel(BaseModel):
     def get_last_layer(self):
         return self.decoder.conv_out.weight
 
-    def encode(self, x: torch.Tensor, num_levels: int=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
+    def encode(self, x: torch.Tensor, num_levels: Union[List,int]=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
         """ Encodes the input tensor, i.e. runs the encoder.
 
         Args:
             x -> torch.Tensor: The input tensor.
-            num_levels -> int: The number of levels to quantize to.
+            num_levels -> int: The levels of quantization precision.
 
         Returns:
             z_quantized -> torch.Tensor: The quantized latent representation.
@@ -116,12 +116,12 @@ class RQModel(BaseModel):
         decoded = self.decode(z_quantized)
         return decoded
 
-    def forward(self, input: torch.Tensor, num_levels: int=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
+    def forward(self, input: torch.Tensor, num_levels: Union[List,int]=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
         """ Runs the model on the input tensor.
 
         Args:
             input -> torch.Tensor: The input image.
-            num_levels -> int: The number of levels to quantize to.
+            num_levels -> int: The levels of quantization precision.
 
         Returns:
             decoded -> torch.Tensor: The decoded image.
@@ -137,7 +137,7 @@ class RQModel(BaseModel):
         decoded = self.decode(z_quantized)
         return decoded, result_dict
 
-    def _finetuning_encoder_forward(self, input: torch.Tensor) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
+    def _finetuning_encoder_forward(self, input: torch.Tensor, num_levels: Union[List, int]=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
         """ Runs the encoder on the input tensor without gradients and sets quantizer losses to 0.
 
         Args:
@@ -149,7 +149,7 @@ class RQModel(BaseModel):
                 and losses from the quantizer.
         """
         with torch.no_grad():
-            z_quantized, result_dict = self.encode(input)
+            z_quantized, result_dict = self.encode(input, num_levels=num_levels)
             result_dict["quantizer_loss"] *= 0
             result_dict["commitment_loss"] *= 0
             if "codebook_loss" in result_dict:

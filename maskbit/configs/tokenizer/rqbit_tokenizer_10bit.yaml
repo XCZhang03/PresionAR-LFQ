@@ -31,9 +31,12 @@ model:
         sample_with_conv: True
 
         ## residual quantization
-        num_quantizers: 1
+        num_quantizers: 2
         scales: null 
-        variants: [2,]
+        variants: [2,3]
+        ## precision schedule
+        schedule_type: "uniform"
+
 
 
     discriminator:

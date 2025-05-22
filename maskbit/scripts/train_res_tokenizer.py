@@ -25,6 +25,7 @@ from utils.logger import setup_logger
 from utils.meter import AverageMeter
 from modeling.modules import EMAModel, VQGANLoss
 from modeling.rqgan import RQModel
+from modeling.quantizer.quant_scheduler import QuantScheduler
 from evaluator.evaluator import ResidualTokenizerEvaluator
 
 from utils.viz_utils import make_viz_from_samples
@@ -38,7 +39,8 @@ def get_config():
 
     yaml_conf = OmegaConf.load(cli_conf.config)
     conf = OmegaConf.merge(yaml_conf, cli_conf)
-
+    ## Append the number of levels to the experiment name
+    conf.experiment.name = f"{conf.experiment.name}_{conf.model.vq_model.num_quantizers}levels"
     return conf
 
 def get_save_iteration(project_dir):
@@ -234,6 +236,13 @@ def main():
         num_training_steps=config.training.max_train_steps * accelerator.num_processes - config.losses.discriminator_start,
         num_warmup_steps=config.lr_scheduler.params.warmup_steps * accelerator.num_processes,
     )
+    quant_scheduler = QuantScheduler(
+        num_quantizers=config.model.vq_model.num_quantizers,
+        max_train_steps=config.training.max_train_steps,
+        batch_size=config.training.per_gpu_batch_size,
+        schedule_type=config.model.vq_model.get("schedule_type", "uniform"),
+        weights=config.model.vq_model.get("weights", None),
+    )
 
     # DataLoaders creation:
     # We use webdataset for data loading. The dataloaders are created with sampling with replacement.
@@ -373,9 +382,11 @@ def main():
             )
             fnames = batch["__key__"]
             data_time_m.update(time.time() - end)
-
+            # update the quantization scheduler
+            quant_scheduler.set_step(global_step)
+            num_levels = quant_scheduler.get_num_levels()
             with accelerator.accumulate([model, loss_module]):
-                reconstructed_images, extra_results_dict = model(images)
+                reconstructed_images, extra_results_dict = model(images, num_levels=num_levels)
 
                 # ########################
                 # autoencoder loss
