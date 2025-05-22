@@ -1,5 +1,4 @@
-### 3.21  
-Reproduce bit tokenizers. Then train multilayer residual vae without decoder dropout
+## Logs of experiements and checkpoints
 
-### TODOs
-- Add decoder dropout annealing schedule
+#### Wed May 21 23:41:53 EDT 2025
+-Naive 1 layer LFQ dir: `/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/current`
