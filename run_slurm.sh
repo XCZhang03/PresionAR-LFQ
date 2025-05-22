@@ -44,8 +44,8 @@ srun bash -c "
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
-    training.per_gpu_batch_size=32 \
-    experiment.save_every=20_000 \
+    training.per_gpu_batch_size=8 \
+    experiment.save_every=100 \
     experiment.resume=false \
     "
 
