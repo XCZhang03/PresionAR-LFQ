@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=vae-1
-#SBATCH -p gpu
+#SBATCH -p gpu_test
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
@@ -9,7 +9,7 @@
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --nodes=2                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
-#SBATCH --gres=gpu:4                # number of GPUs per node
+#SBATCH --gres=gpu:1                # number of GPUs per node
 #SBATCH -t 2-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 
@@ -17,7 +17,7 @@
 ### Set enviroment ###
 ######################
 source activateEnvironment.sh
-GPUS_PER_NODE=4
+GPUS_PER_NODE=1
 export LOG_LEVEL=INFO
 ######################
 
@@ -43,8 +43,8 @@ srun bash -c "
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
-    training.per_gpu_batch_size=32 \
-    experiment.save_every=20_000 \
+    training.per_gpu_batch_size=8 \
+    experiment.save_every=100 \
     "
 
 
