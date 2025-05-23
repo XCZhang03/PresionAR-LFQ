@@ -10,7 +10,7 @@
 #SBATCH --nodes=2                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=16           # number of CPU cores per task
-#SBATCH --gres=gpu:nvidia_a100-sxm4-80gb:4                # number of GPUs per node
+#SBATCH --gres=gpu:4                # number of GPUs per node
 #SBATCH -t 2-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 #SBATCH --account=kempner_sham_lab
