@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=vae-2
-#SBATCH -p kempner_requeue
+#SBATCH -p kempner
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
