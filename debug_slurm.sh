@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-2
+#SBATCH --job-name=vae-debug
 #SBATCH -p gpu_test
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -40,7 +40,7 @@ srun bash -c "
     --num_processes $NUM_PROCESSES \
     --num_machines $NNODES \
     --main_process_ip $head_node_ip \
-    --main_process_port 0 \
+    --main_process_port 29500 \
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_2lvl.yaml \
