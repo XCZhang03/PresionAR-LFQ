@@ -44,10 +44,11 @@ srun bash -c "
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
-    training.per_gpu_batch_size=8 \
-    experiment.save_every=100 \
-    experiment.resume=false \
+    training.per_gpu_batch_size=16 \
+    training.gradient_accumulation_steps=2 \
+    experiment.save_every=20_000 \
+    experiment.resume=true \
+    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/current/checkpoints/checkpoint_10 \
     "
-
 
 
