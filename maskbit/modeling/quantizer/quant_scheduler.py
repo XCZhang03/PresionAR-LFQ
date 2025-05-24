@@ -52,6 +52,8 @@ class QuantScheduler:
         self.batch_size = batch_size
         self.global_step = 0
 
+        self.repr = False
+
     def set_step(self, step: int):
         """
         Set the current step of the scheduler.
@@ -67,12 +69,19 @@ class QuantScheduler:
             List[int]: The number of levels for each batch.
         """
         if self.schedule_type == 'uniform':
-            return np.random.randint(1, self.num_quantizers + 1, size=self.batch_size).tolist()
+            num_levels = np.random.randint(1, self.num_quantizers + 1, size=self.batch_size).tolist()
         elif self.schedule_type == 'weighted':
             num_levels = []
             for i in range(self.batch_size):
                 num_levels.append(np.random.choice(self.num_quantizers, p=self.weights) + 1)
-            return num_levels
+        
+        if not self.repr:
+            print(f"QuantScheduler: {self.schedule_type} schedule with {self.num_quantizers} quantizers, "
+                  f"weights: {self.weights}, batch size: {self.batch_size}, step: {self.global_step}, "
+                  f"num_levels: {num_levels}")
+            self.repr = True
+
+        return num_levels
 
 
 if __name__ == "__main__":
