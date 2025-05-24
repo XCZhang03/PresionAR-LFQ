@@ -325,11 +325,14 @@ def main():
     global_step = 0
     first_epoch = 0
 
+    init_checkpoint = False
     if config.experiment.init_checkpoint != '' and os.path.exists(config.experiment.init_checkpoint):
         global_step = load_checkpoint(Path(config.experiment.init_checkpoint), accelerator)
 
         if config.training.use_ema:
             ema_model.set_step(global_step)
+        
+        init_checkpoint = True
 
     if config.experiment.resume:
         accelerator.wait_for_everyone()
@@ -365,8 +368,11 @@ def main():
                 accelerator.scaler = grad_scaler
 
             first_epoch = global_step // num_update_steps_per_epoch
-        else:
-            logger.info("Training from scratch.")
+
+            init_checkpoint = True
+    
+    if not init_checkpoint:
+        logger.info("Training from scratch.")
 
     batch_time_m = AverageMeter()
     data_time_m = AverageMeter()
