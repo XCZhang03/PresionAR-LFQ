@@ -39,8 +39,6 @@ def get_config():
 
     yaml_conf = OmegaConf.load(cli_conf.config)
     conf = OmegaConf.merge(yaml_conf, cli_conf)
-    ## Append the number of levels to the experiment name
-    conf.experiment.name = f"{conf.experiment.name}_{conf.model.vq_model.num_quantizers}levels"
     return conf
 
 def get_save_iteration(project_dir):
@@ -71,9 +69,9 @@ def main():
 
     if config.experiment.resume:
         ## remember to change the dir after all training
-        output_dir = os.path.join(work_dir, "outputs", config.experiment.name, "current")   # do not set time if experiment may be resumed
+        output_dir = os.path.join(work_dir, "outputs", config.experiment.name, f"{config.model.vq_model.num_quantizers}level", "current")   # do not set time if experiment may be resumed
     else:
-        output_dir = os.path.join(work_dir, "outputs", config.experiment.name, cur_time)
+        output_dir = os.path.join(work_dir, "outputs", config.experiment.name, f"{config.model.vq_model.num_quantizers}level", cur_time)
     config.experiment.logging_dir = str(Path(output_dir) / "logs")
     
     if config.experiment.logger not in ("wandb", "tensorboard"):
