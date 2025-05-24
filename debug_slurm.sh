@@ -40,7 +40,7 @@ srun bash -c "
     --num_processes $NUM_PROCESSES \
     --num_machines $NNODES \
     --main_process_ip $head_node_ip \
-    --main_process_port 29500 \
+    --main_process_port 7100 \
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_2lvl.yaml \
