@@ -19,7 +19,8 @@ SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
 ## change the batch size according to GPU memory
 SCRIPT_ARGS="
     config=${ACCELERATE_DIR}/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
-    training.per_gpu_batch_size=8 \
+    training.per_gpu_batch_size=16 \
+    training.gradient_accumulation_steps=2 \
     dataset.params.train_shards_path_or_url=./shards/train/imagenet-train-{0000..0008}.tar \
     dataset.params.eval_shards_path_or_url=./shards/imagenet-val-0009.tar \
     experiment.save_every=100 \

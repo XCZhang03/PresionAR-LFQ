@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-2
-#SBATCH -p kempner
+#SBATCH --job-name=vae-1
+#SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
@@ -10,7 +10,7 @@
 #SBATCH --nodes=2                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=16           # number of CPU cores per task
-#SBATCH --gres=gpu:4                # number of GPUs per node
+#SBATCH --gres=gpu:nvidia_a100-sxm4-40gb:4                # number of GPUs per node
 #SBATCH -t 2-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 #SBATCH --account=kempner_sham_lab
@@ -48,7 +48,8 @@ srun bash -c "
     training.per_gpu_batch_size=16 \
     training.gradient_accumulation_steps=2 \
     experiment.save_every=20_000 \
-    experiment.resume=false \
+    experiment.resume=true \
+    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/current/checkpoints/checkpoint_10 \
     "
 
 
