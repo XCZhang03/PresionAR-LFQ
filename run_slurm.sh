@@ -28,11 +28,27 @@ export LOG_LEVEL=INFO
 ######################
 head_node_ip=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 ######################
+
+######################
+## Set launcher ######
+######################
 NNODES=$SLURM_NNODES
 NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
+######################
 
+
+######################
+# Set work dir #######
+######################
 ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
 cd $ACCELERATE_DIR
+######################
+
+####################
+### Set run name ###
+####################
+RUN_NAME="1level-long"
+####################
 
 srun bash -c "
     accelerate launch \
@@ -49,6 +65,8 @@ srun bash -c "
     training.gradient_accumulation_steps=2 \
     experiment.save_every=2_000 \
     experiment.resume=true \
+    experiment.run_name=${RUN_NAME} \
+    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/1level/current/checkpoints/checkpoint_112 \
     "
 
 
