@@ -64,7 +64,7 @@ srun bash -c "
     training.gradient_accumulation_steps=1 \
     experiment.save_every=100 \
     experiment.generate_every=100 \
-    experiment.eval_every=100 \
+    experiment.eval_every=400 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level/2025-05-25-04-13-13-EDT/checkpoints/checkpoint_3 \
