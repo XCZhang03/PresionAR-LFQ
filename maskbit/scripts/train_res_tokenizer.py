@@ -67,15 +67,18 @@ def main():
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = False
 
-    if config.experiment.resume:
-        ## remember to change the dir after all training
-        output_dir = os.path.join(work_dir, "outputs", config.experiment.name, f"{config.model.vq_model.num_quantizers}level", "current")   # do not set time if experiment may be resumed
-    else:
-        output_dir = os.path.join(work_dir, "outputs", config.experiment.name, f"{config.model.vq_model.num_quantizers}level", cur_time)
+    output_dir = os.path.join(work_dir, "outputs", config.experiment.name, config.experiment.run_name)
+    # if config.experiment.resume:
+    #     ## remember to change the dir after all training
+    #     output_dir = os.path.join(work_dir, "outputs", config.experiment.name, f"{config.model.vq_model.num_quantizers}level", "current")   # do not set time if experiment may be resumed
+    # else:
+    #     output_dir = os.path.join(work_dir, "outputs", config.experiment.name, f"{config.model.vq_model.num_quantizers}level", cur_time)
     config.experiment.logging_dir = str(Path(output_dir) / "logs")
     
     if config.experiment.logger not in ("wandb", "tensorboard"):
         raise ValueError(f"{config.experiment.logger} is not supported. Please choose `wandb` or `tensorboard`.")
+    
+
 
     project_config = ProjectConfiguration(
         project_dir=output_dir,
@@ -108,10 +111,35 @@ def main():
     # We need to initialize the trackers we use, and also store our configuration.
     # The trackers initializes automatically on the main process.
     if accelerator.is_main_process:
-        accelerator.init_trackers(
-            project_name=config.experiment.name,
-            config=OmegaConf.to_container(config, resolve=True)  # Convert OmegaConf to a dictionary
+         #### save the run_id for resume
+        if config.experiment.logger == "wandb":
+            import uuid
+            run_id_file = os.path.join(output_dir, "wandb_run_id.txt")
+            if os.path.exists(run_id_file):
+                with open(run_id_file, "r") as f:
+                    run_id = f.read().strip()
+            else:
+                run_id = str(uuid.uuid4())
+                with open(run_id_file, "w") as f:
+                    f.write(run_id)
+            
+            accelerator.init_trackers(
+                project_name=config.experiment.name,
+                config=OmegaConf.to_container(config, resolve=True),  # Convert OmegaConf to a dictionary
+                init_kwargs={
+                    "wandb": {
+                        "id": run_id,
+                        "resume": "allow",
+                        "name": config.experiment.run_name,
+                    }
+                }
+                )
+        elif config.experiment.logger == "tensorboard":
+            accelerator.init_trackers(
+                project_name=config.experiment.name,
+                config=OmegaConf.to_container(config, resolve=True),  # Convert OmegaConf to a dictionary
             )
+        
         config_path = Path(output_dir) / "config.yaml"
         logger.info(f"Saving config to {config_path}")
         OmegaConf.save(config, config_path)

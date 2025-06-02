@@ -16,6 +16,13 @@ cd $ACCELERATE_DIR
 
 SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
 
+####################
+### Set run name ###
+####################
+RUN_NAME="1lvl_test"
+####################
+
+
 ## change the batch size according to GPU memory
 SCRIPT_ARGS="
     config=${ACCELERATE_DIR}/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
@@ -25,7 +32,8 @@ SCRIPT_ARGS="
     dataset.params.eval_shards_path_or_url=./shards/imagenet-val-0009.tar \
     experiment.save_every=100 \
     experiment.generate_every=100 \
-    experiment.eval_every=200   
+    experiment.eval_every=200 \
+    experiment.run_name=${RUN_NAME} \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly

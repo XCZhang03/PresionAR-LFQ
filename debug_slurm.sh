@@ -27,11 +27,27 @@ export LOG_LEVEL=INFO
 ######################
 head_node_ip=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 ######################
+
+######################
+## Set launcher ######
+######################
 NNODES=$SLURM_NNODES
 NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
+######################
 
+
+######################
+# Set work dir #######
+######################
 ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
 cd $ACCELERATE_DIR
+######################
+
+####################
+### Set run name ###
+####################
+RUN_NAME="2lvl_seperate_test"
+####################
 
 srun bash -c "
     accelerate launch \
@@ -50,7 +66,8 @@ srun bash -c "
     experiment.generate_every=100 \
     experiment.eval_every=100 \
     experiment.resume=true \
-    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/current/checkpoints/checkpoint_10 \
+    experiment.run_name=${RUN_NAME} \
+    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level/2025-05-25-04-13-13-EDT/checkpoints/checkpoint_3 \
     "
 
 
