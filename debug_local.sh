@@ -32,7 +32,7 @@ SCRIPT_ARGS="
     dataset.params.eval_shards_path_or_url=./shards/imagenet-val-0009.tar \
     experiment.save_every=100 \
     experiment.generate_every=100 \
-    experiment.eval_every=200 \
+    experiment.eval_every=400 \
     experiment.run_name=${RUN_NAME} \
     "
     
