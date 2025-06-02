@@ -47,7 +47,7 @@ cd $ACCELERATE_DIR
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="1level-long"
+RUN_NAME="2level-mixed_from_start-long"
 ####################
 
 srun bash -c "
@@ -60,13 +60,13 @@ srun bash -c "
     --main_process_port 29500 \
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
-    config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
+    config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_2lvl.yaml \
     training.per_gpu_batch_size=16 \
     training.gradient_accumulation_steps=2 \
     experiment.save_every=2_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
-    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/1level/current/checkpoints/checkpoint_112 \
+    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level/current/checkpoints/checkpoint_105 \
     "
 
 
