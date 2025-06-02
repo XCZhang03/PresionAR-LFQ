@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-1
+#SBATCH --job-name=vae-2-from_scratch
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -47,7 +47,7 @@ cd $ACCELERATE_DIR
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="2level-mixed_from_start-long"
+RUN_NAME="2level-mixed_from_scratch-long"
 ####################
 
 srun bash -c "
