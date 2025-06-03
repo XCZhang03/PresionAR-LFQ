@@ -31,15 +31,12 @@ Prepare the dataset shards
 mkdir ./shards
 python scripts/create_sharded_dataset.py --data="./data" --shards="./shards"
 ```
+or
+```bash
+sbatch shard_data.sh
+```
 
 If the resulting data is not in ``maskbit/shards``, modify the path in ``run_slurm.sh`` to be the path for data shards
-
-5. Prepare wandb
-```shell
-wandb init
-```
-api key ``78319f33ffd79b3480286266fd8ba1f9c5bc3dab``
-choose a project randomly, the project name is determined in the training script
 
 
 6. run training script. change the num processes if necessary
