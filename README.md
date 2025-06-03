@@ -72,7 +72,7 @@ Change the work directory in `activateEnvironment.sh`.
 Change the number of processes if necessary.
 
 ```shell
-bash run_slurm.sh
+sbatch run_slurm.sh
 ```
 
 
