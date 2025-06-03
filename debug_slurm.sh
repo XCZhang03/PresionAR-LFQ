@@ -35,14 +35,6 @@ NNODES=$SLURM_NNODES
 NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ######################
 
-
-######################
-# Set work dir #######
-######################
-ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
-cd $ACCELERATE_DIR
-######################
-
 ####################
 ### Set run name ###
 ####################
@@ -67,7 +59,7 @@ srun bash -c "
     experiment.eval_every=400 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
-    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level/2025-05-25-04-13-13-EDT/checkpoints/checkpoint_3 \
+    experiment.init_checkpoint=$ACCELERATE_DIR/runs/outputs/rqbit_tokenizer_10bit/2level/2025-05-25-04-13-13-EDT/checkpoints/checkpoint_3 \
     "
 
 

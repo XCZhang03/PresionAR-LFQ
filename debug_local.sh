@@ -1,18 +1,18 @@
+# !/bin/bash
+
 source activateEnvironment.sh
+
+######################
+### Set GPUs #########
+######################
 GPUS_PER_NODE=2
 ######################
 
-######################
-#### Set network #####
-######################
-######################
 
 LAUNCHER="accelerate launch \
     --num_processes $((1 * GPUS_PER_NODE)) \
     --num_machines 1 \
     "
-ACCELERATE_DIR="/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-LFQ/maskbit"
-cd $ACCELERATE_DIR
 
 SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
 
@@ -38,4 +38,5 @@ SCRIPT_ARGS="
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly
 CMD="$LAUNCHER $SCRIPT $SCRIPT_ARGS"
+echo "Running command: $CMD"
 $CMD
