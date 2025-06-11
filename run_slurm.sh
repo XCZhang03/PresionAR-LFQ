@@ -58,7 +58,7 @@ srun bash -c "
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
     training.per_gpu_batch_size=16 \
     training.gradient_accumulation_steps=2 \
-    experiment.save_every=2_000 \
+    experiment.save_every=1_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
     "
