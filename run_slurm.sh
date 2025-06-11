@@ -40,7 +40,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ### Set run name ###
 ####################
 # RUN_NAME="2level-mixed_after_1lvl-long"
-RUN_NAME="2level-mixed_from_scratch-long"
+# RUN_NAME="2level-mixed_from_scratch-long"
+RUN_NAME="1level-long"
 ####################
 
 srun bash -c "
@@ -59,7 +60,7 @@ srun bash -c "
     experiment.save_every=2_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
-    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level/current/checkpoints/checkpoint_105 \
+    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/1level/current/checkpoints/checkpoint_112 \
     "
 
 
