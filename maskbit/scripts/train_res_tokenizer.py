@@ -137,7 +137,7 @@ def main():
         elif config.experiment.logger == "tensorboard":
             accelerator.init_trackers(
                 project_name=config.experiment.name,
-                config=OmegaConf.to_container(config, resolve=True),  # Convert OmegaConf to a dictionary
+                # config=OmegaConf.to_container(config, resolve=True),  # Convert OmegaConf to a dictionary
             )
         
         config_path = Path(output_dir) / "config.yaml"
