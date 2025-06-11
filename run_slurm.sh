@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-2-2variants
+#SBATCH --job-name=vae-1
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
