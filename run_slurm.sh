@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-2-resume_1lvl
+#SBATCH --job-name=vae-1
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -54,13 +54,12 @@ srun bash -c "
     --main_process_port 29500 \
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
-    config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_2lvl.yaml \
+    config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
     training.per_gpu_batch_size=16 \
     training.gradient_accumulation_steps=2 \
     experiment.save_every=2_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
-    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/1level/current/checkpoints/checkpoint_112 \
     "
 
 
