@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-1
+#SBATCH --job-name=vae-2-scratch
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -11,7 +11,7 @@
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=16           # number of CPU cores per task
 #SBATCH --gres=gpu:nvidia_a100-sxm4-40gb:4                # number of GPUs per node
-#SBATCH -t 2-00:00                  # maximum execution time (HH:MM:SS)
+#SBATCH -t 4-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 #SBATCH --account=kempner_sham_lab
 
@@ -40,8 +40,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ### Set run name ###
 ####################
 # RUN_NAME="2level-mixed_after_1lvl-long"
-# RUN_NAME="2level-mixed_from_scratch-long"
-RUN_NAME="1level-long"
+RUN_NAME="2level-mixed_from_scratch-long"
+# RUN_NAME="1level-long"
 # RUN_NAME="2level-2variant-from_scratch-long"
 ####################
 
@@ -55,7 +55,7 @@ srun bash -c "
     --main_process_port 29500 \
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
-    config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
+    config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_2lvl.yaml \
     training.per_gpu_batch_size=16 \
     training.gradient_accumulation_steps=2 \
     experiment.save_every=1_000 \
