@@ -46,6 +46,14 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 RUN_NAME="2level-large_batch"
 ####################
 
+
+###################
+### Config file ###
+###################
+config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_2lvl.yaml
+# config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml
+###################
+
 srun bash -c "
     accelerate launch \
     --multi_gpu \
@@ -56,7 +64,7 @@ srun bash -c "
     --main_process_port 29500 \
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
-    config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_2lvl.yaml \
+    config=$config_file \
     training.per_gpu_batch_size=16 \
     training.gradient_accumulation_steps=4 \
     experiment.save_every=1_000 \
