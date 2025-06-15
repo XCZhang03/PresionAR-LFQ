@@ -41,8 +41,9 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 # RUN_NAME="2level-mixed_after_1lvl-long"
 # RUN_NAME="2level-mixed_from_scratch-long"
-RUN_NAME="1level-long"
+# RUN_NAME="1level-long"
 # RUN_NAME="2level-2variant-from_scratch-long"
+RUN_NAME="2level-large_batch"
 ####################
 
 srun bash -c "
@@ -57,10 +58,11 @@ srun bash -c "
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
     training.per_gpu_batch_size=16 \
-    training.gradient_accumulation_steps=2 \
+    training.gradient_accumulation_steps=4 \
     experiment.save_every=1_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
+    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-mixed_from_scratch-long/checkpoints/checkpoint_213 \
     "
 
 
