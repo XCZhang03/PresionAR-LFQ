@@ -118,27 +118,39 @@ class ResidualLFQ(torch.nn.Module):
 
         return quantized_out, all_result_dict
     
-    def get_codebook_entry(self, indices: torch.Tensor):
+    def get_codebook_entry(self, indices: torch.Tensor, num_level: int = None) -> torch.Tensor:
         """ Get the codebook entry for the given indices.
 
         Args:
-            indices -> torch.Tensor: The indices of the codebook entry. shape: (n, ...)
+            indices -> torch.Tensor: The indices of the codebook entry. shape: (n, ...) or (...)
+            num_level -> int: The level of quantization precision. If None, it will sum up all the codemaps from level 0.
+            range: [0, num_quantizers - 1]
 
         Returns:
             codebook_entry -> torch.Tensor: The codebook entry.
         """
-        N, B, *_ = indices.shape
-        assert N <= self.num_quantizers
-        indices = torch.chunk(indices, chunks=N, dim=0)
-        all_tokens = [quantizer.get_codebook_entry(index.squeeze(0)) for quantizer, index in zip(self.quantizers, indices)]
-        return torch.stack(all_tokens, dim=0).sum(dim=0)
-
+        if num_level is None:
+            N, B, *_ = indices.shape
+            assert N <= self.num_quantizers
+            indices = torch.chunk(indices, chunks=N, dim=0)
+            all_tokens = [quantizer.get_codebook_entry(index.squeeze(0)) for quantizer, index in zip(self.quantizers, indices)]
+            return torch.stack(all_tokens, dim=0).sum(dim=0)
+        else:
+            assert num_level < self.num_quantizers, f"num_level should be less than {self.num_quantizers}, but got {num_level}"
+            assert len(indices.shape) == 3, "Indices should be of shape (b, h, w) or (b, h*w)"
+            B, *_ = indices.shape
+            tokens = self.quantizers[num_level].get_codebook_entry(indices)
+            return tokens
 
 
         
 if __name__ == "__main__":
     quantizer = ResidualLFQ(num_quantizers=3, variants=[2,3,3])
     z = torch.randn(3, 10, 32, 32).requires_grad_()
-    quantized, outputs = quantizer(z, num_levels=[1, 2, 3])
+    quantized, outputs = quantizer(z, num_levels=3)
     for key, value in outputs.items():
         print(key, value.shape)
+    z_3 = quantizer.get_codebook_entry(outputs['min_encoding_indices'][2], num_level=2)
+    z2 = quantizer.get_codebook_entry(outputs['min_encoding_indices'][:2])
+    z_hat = z2 + z_3
+    assert torch.equal(z_hat, quantized.permute(0, 2, 3, 1))  # check if the quantized output is equal to the codebook entry

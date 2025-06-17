@@ -100,7 +100,7 @@ class RQModel(BaseModel):
         decoded = self.decoder(z_quantized)
         return decoded
 
-    def decode_tokens(self, tokens: torch.Tensor) -> torch.Tensor:
+    def decode_tokens(self, tokens: torch.Tensor, num_level: int=None, context: torch.Tensor=None) -> torch.Tensor:
         """ Decodes from tokens, i.e. runs the decoder after converting tokens to latent representations.
 
         Args:
@@ -109,7 +109,10 @@ class RQModel(BaseModel):
         Returns:
             decoded -> torch.Tensor: The decoded image.
         """
-        z_quantized = self.quantize.get_codebook_entry(tokens) ## (b, h, w, c) or (b, h*w, c)
+        z_quantized = self.quantize.get_codebook_entry(tokens, num_level=num_level) ## (b, h, w, c) or (b, h*w, c)
+        if context is not None:
+            assert num_level is not None, "only decode one level when context is provided"
+            z_quantized = z_quantized + context
         ss = int(math.sqrt(float(z_quantized.size(1)))) if len(z_quantized.shape) <= 3 else int(z_quantized.size(1))
         z_quantized = z_quantized.reshape(z_quantized.size(0), ss, ss, -1)
         z_quantized = rearrange(z_quantized, 'b h w c -> b c h w').contiguous()
@@ -157,7 +160,7 @@ class RQModel(BaseModel):
             result_dict["entropy_loss"] *= 0
         return z_quantized, result_dict
     
-
+    
 
 if __name__ == "__main__":
     from omegaconf import OmegaConf
