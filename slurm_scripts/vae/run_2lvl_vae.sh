@@ -40,8 +40,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ### Set run name ###
 ####################
 # RUN_NAME="2level-mixed_after_1lvl-long"
-# RUN_NAME="2level-mixed_from_scratch-long"
-RUN_NAME="2level-2variant-from_scratch-long"
+RUN_NAME="2level-mixed_from_scratch-long"
+# RUN_NAME="2level-2variant-from_scratch-long"
 # RUN_NAME="2level-large_batch"
 ####################
 
