@@ -17,6 +17,7 @@ cd $ACCELERATE_DIR
 ####################
 ### Set wandb ######
 export WANDB_API_KEY=78319f33ffd79b3480286266fd8ba1f9c5bc3dab
+export WANDB_ENTITY=DiffAR
 ####################
 
 
