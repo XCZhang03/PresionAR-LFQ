@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-4-from_scratch
+#SBATCH --job-name=vae-4-resume1
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -11,7 +11,7 @@
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=16           # number of CPU cores per task
 #SBATCH --gres=gpu:nvidia_a100-sxm4-40gb:4                # number of GPUs per node
-#SBATCH -t 4-00:00                  # maximum execution time (HH:MM:SS)
+#SBATCH -t 6-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 #SBATCH --account=kempner_sham_lab
 
@@ -39,7 +39,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="4level-from_scratch-long"
+# RUN_NAME="4level-from_scratch-long"
+RUN_NAME="4level-resume_from_1lvl"
 ####################
 
 
@@ -65,6 +66,7 @@ srun bash -c "
     experiment.save_every=1_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
+    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/1level/current/checkpoints/checkpoint_111  \
     "
 
 
