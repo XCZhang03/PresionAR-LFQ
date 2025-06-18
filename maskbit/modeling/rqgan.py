@@ -110,12 +110,12 @@ class RQModel(BaseModel):
             decoded -> torch.Tensor: The decoded image.
         """
         z_quantized = self.quantize.get_codebook_entry(tokens, num_level=num_level) ## (b, h, w, c) or (b, h*w, c)
-        if context is not None:
-            assert num_level is not None, "only decode one level when context is provided"
-            z_quantized = z_quantized + context
         ss = int(math.sqrt(float(z_quantized.size(1)))) if len(z_quantized.shape) <= 3 else int(z_quantized.size(1))
         z_quantized = z_quantized.reshape(z_quantized.size(0), ss, ss, -1)
         z_quantized = rearrange(z_quantized, 'b h w c -> b c h w').contiguous()
+        if context is not None:
+            assert num_level is not None, "only decode one level when context is provided"
+            z_quantized = z_quantized + context
         decoded = self.decode(z_quantized)
         return decoded
 

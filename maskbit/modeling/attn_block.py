@@ -423,17 +423,17 @@ class CondTransformerEncoder(nn.Module):
         else:
             raise ValueError(f'Unknown context_conditioning: {context_conditioning}')
         
-        if context_conditioning == "channel":
-            embed_dim = dim * 2
-        else:
-            embed_dim = dim
+        # if context_conditioning == "channel":
+        #     embed_dim = dim * 2
+        # else:
+        #     embed_dim = dim
         
         
         drop_path_rate = [x.item() for x in torch.linspace(0, drop_path, depth)]
 
         self.blocks = nn.ModuleList([
             block_cls(
-                embed_dim=embed_dim, num_heads=num_heads, attn_drop=attn_drop, proj_drop=proj_drop,
+                embed_dim=dim, num_heads=num_heads, attn_drop=attn_drop, proj_drop=proj_drop,
                 drop_path=drop_path_rate[i],
                 attn_l2_norm=attn_l2_norm, flash_if_available=flash_if_available,
                 fused_if_available=fused_if_available, use_ada_ln=(label_conditioning == "adaln"),

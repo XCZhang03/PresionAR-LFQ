@@ -56,9 +56,15 @@ class CondBert(BaseModel):
         self.num_classes = num_classes
         self.drop_label = num_classes
 
+        
         self.hidden_dim = hidden_dim
         self.context_dim = context_dim
+        if self.context_conditioning == "channel":
+            self.emb_dim = hidden_dim // 2
+        else:
+            self.emb_dim = hidden_dim
 
+        
         ### define transformer 
         self.transformer = CondTransformerEncoder(
             dim=hidden_dim,
@@ -77,29 +83,29 @@ class CondBert(BaseModel):
 
         ### define embedding layers
         self.tok_emb = nn.Embedding(
-            codebook_size + 1, hidden_dim
+            codebook_size + 1, self.emb_dim
         )
         if tie_embeddings:
             self.proj_weight = self.tok_emb.weight[:codebook_size, :]
         else:
             self.proj_weight = nn.Parameter(
-                torch.empty(codebook_size, hidden_dim)
+                torch.empty(codebook_size, self.emb_dim)
             )
             nn.init.trunc_normal_(self.proj_weight.data, mean=0.0, std=0.02)
         self.proj_bias = nn.Parameter(torch.zeros(self.seq_len, codebook_size))
         self.class_emb = nn.Embedding(self.num_classes + 1, hidden_dim)
-        self.pos_emb = torch.nn.init.trunc_normal_(torch.nn.Parameter(torch.zeros(1, self.seq_len, hidden_dim)), 0., 0.02) 
+        self.pos_emb = torch.nn.init.trunc_normal_(torch.nn.Parameter(torch.zeros(1, self.seq_len, self.emb_dim)), mean=0., std=0.02) 
         if tie_context_embeddings:
             self.context_pos_emb = self.pos_emb[:, :self.seq_len, :]
         else:
-            self.context_pos_emb = torch.nn.init.trunc_normal_(torch.nn.Parameter(torch.zeros(1, self.seq_len, hidden_dim)), 0., 0.02)
-        self.context_proj = nn.Linear(context_dim, hidden_dim)
+            self.context_pos_emb = torch.nn.init.trunc_normal_(torch.nn.Parameter(torch.zeros(1, self.seq_len, self.emb_dim)), mean=0., std=0.02)
+        self.context_proj = nn.Linear(context_dim, self.emb_dim)
 
         # Last layer after the Transformer block
         self.last_layer = torch.nn.Sequential(
-            torch.nn.Linear(in_features=hidden_dim, out_features=hidden_dim),
+            torch.nn.Linear(in_features=self.hidden_dim, out_features=self.emb_dim),
             torch.nn.GELU(),
-            torch.nn.LayerNorm(hidden_dim, eps=1e-12),
+            torch.nn.LayerNorm(self.emb_dim, eps=1e-12),
         )
 
         self.apply(self._init_weights)
@@ -145,8 +151,6 @@ class CondBert(BaseModel):
         context_emb = self.context_proj(context)
         tok_emb = tok_emb + self.pos_emb
         context_emb = context_emb + self.context_pos_emb
-        if self.label_conditioning == 'concat':
-            tok_emb = torch.cat([tok_emb, cls_embedding], dim=1)
 
         if self.context_conditioning in ['adaln', 'cross', 'control']:
             if self.context_conditioning == 'adaln' and self.label_conditioning == 'concat':
@@ -163,12 +167,13 @@ class CondBert(BaseModel):
             x = tok_emb[:, :self.seq_len, :] + context_emb
             context = None
         elif self.context_conditioning == 'channel':
-            assert self.label_conditioning == 'adaln', \
-                f'context_conditioning "channel" only supports label_conditioning "adaln", but got {self.label_conditioning}'
             x = torch.cat([tok_emb, context_emb], dim=-1)
             context = None
         else:
             raise ValueError(f'Unknown context_conditioning: {self.context_conditioning}')
+
+        if self.label_conditioning == 'concat':
+            x = torch.cat([x, cls_embedding], dim=1)
 
         x, context = self.transformer(
             x,
@@ -177,9 +182,6 @@ class CondBert(BaseModel):
         )
 
         x = x[:, :self.seq_len, :]  
-        if self.context_conditioning == "channel":
-            x = x.split(2, dim=-1)[0]  # Split the channel dimension
-
         x = self.last_layer(x)
 
         logits = torch.matmul(x, self.proj_weight.t()) + self.proj_bias  # [B, L, C]
@@ -207,7 +209,7 @@ if __name__ == "__main__":
         attn_l2_norm=False,
         flash_if_available=True,
         fused_if_available=True,
-        context_conditioning="concat",
+        context_conditioning="channel",
         label_conditioning="concat",
         num_classes=1000,
     ).to(device=device, dtype=dtype)
@@ -219,7 +221,7 @@ if __name__ == "__main__":
     vae = RQModel(
         config=config,
     ).to(device=device, dtype=dtype)
-    image = torch.randn(2, 3, 256, 256).to(device=device, dtype=dtype)
+    image = torch.randn(2, 3, 256, 256).to(device=device, dtype=dtype) * 1e2
     z_quantized, result_dict = vae.encode(image,num_levels=stage)
     token_indices = result_dict['min_encoding_indices'][stage]
     class_labels = torch.randint(0, 1000, (2,)).to(device)
@@ -231,6 +233,20 @@ if __name__ == "__main__":
         drop_label_mask=drop_label_mask
     )
     print(logits.shape)
+    from modeling.modules.sampling import conditional_sample
+    image = conditional_sample(
+        model=model,
+        vqgan_model=vae,
+        stage=stage,
+        context=z_quantized,
+        num_samples=z_quantized.shape[0],
+        labels=class_labels,
+        mask_token=model.codebook_size,
+    )[0]
+    print(image.shape)
+
+    
+        
     
 
 

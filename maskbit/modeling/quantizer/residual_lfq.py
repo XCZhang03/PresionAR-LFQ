@@ -137,7 +137,6 @@ class ResidualLFQ(torch.nn.Module):
             return torch.stack(all_tokens, dim=0).sum(dim=0)
         else:
             assert num_level < self.num_quantizers, f"num_level should be less than {self.num_quantizers}, but got {num_level}"
-            assert len(indices.shape) == 3, "Indices should be of shape (b, h, w) or (b, h*w)"
             B, *_ = indices.shape
             tokens = self.quantizers[num_level].get_codebook_entry(indices)
             return tokens
