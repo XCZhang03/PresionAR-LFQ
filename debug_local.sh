@@ -2,10 +2,13 @@
 
 source activateEnvironment.sh
 
+export ACCELERATE_DIR="/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-LFQ/maskbit"
+cd $ACCELERATE_DIR
 ######################
 ### Set GPUs #########
 ######################
-GPUS_PER_NODE=2
+GPUS_PER_NODE=1
+export CUDA_VISIBLE_DEVICES=6,7
 ######################
 
 
@@ -19,13 +22,13 @@ SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="1lvl_test"
+RUN_NAME="4lvl-test-loss_weight"
 ####################
 
 
 ## change the batch size according to GPU memory
 SCRIPT_ARGS="
-    config=${ACCELERATE_DIR}/configs/tokenizer/rqbit_tokenizer_10bit.yaml \
+    config=${ACCELERATE_DIR}/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml \
     training.per_gpu_batch_size=16 \
     training.gradient_accumulation_steps=2 \
     dataset.params.train_shards_path_or_url=./shards/train/imagenet-train-{0000..0008}.tar \
@@ -34,6 +37,9 @@ SCRIPT_ARGS="
     experiment.generate_every=100 \
     experiment.eval_every=400 \
     experiment.run_name=${RUN_NAME} \
+    model.vq_model.schedule_type=weighted \
+    model.vq_model.weights=[3,1,1,1] \
+    experiment.logger=tensorboard \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly
