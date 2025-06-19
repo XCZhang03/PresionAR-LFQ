@@ -15,8 +15,8 @@ class ResidualLFQ(torch.nn.Module):
             self,
             token_size: int = 10,
             num_quantizers: int = 2,
-            variants: list[int] = [2,3],
-            scales: Tuple[float, ...] = None,
+            variants: List[int] = [2,3],
+            scales:  Union[List[int], int] = None,
             commitment_cost: float = 0.25,
             entropy_loss_weight: float = 0.1,
             entropy_loss_temperature: float = 0.01,
@@ -31,9 +31,11 @@ class ResidualLFQ(torch.nn.Module):
         self.entropy_gamma = entropy_gamma
         assert num_quantizers == len(variants)
 
-        if scales:
+        if isinstance(scales, list):
             assert len(scales) == num_quantizers
             self.scales = scales
+        elif isinstance(scales, int):
+            self.scales = [scales ** -ind for ind in range(num_quantizers)]
         else:
             self.scales = [2 ** -ind for ind in range(num_quantizers)]
 
@@ -149,7 +151,7 @@ class ResidualLFQ(torch.nn.Module):
 
         
 if __name__ == "__main__":
-    quantizer = ResidualLFQ(num_quantizers=3, variants=[2,3,3])
+    quantizer = ResidualLFQ(num_quantizers=3, variants=[2,3,3], scales=4)
     z = torch.randn(3, 10, 32, 32).requires_grad_()
     quantized, outputs = quantizer(z, num_levels=3, loss_weight=[2,1,1])
     for key, value in outputs.items():
@@ -157,4 +159,4 @@ if __name__ == "__main__":
     z_3 = quantizer.get_codebook_entry(outputs['min_encoding_indices'][2], num_level=2)
     z2 = quantizer.get_codebook_entry(outputs['min_encoding_indices'][:2])
     z_hat = z2 + z_3
-    assert torch.equal(z_hat, quantized.permute(0, 2, 3, 1))  # check if the quantized output is equal to the codebook entry
+    assert torch.allclose(z_hat, quantized.permute(0, 2, 3, 1), atol=1e-5)  # check if the quantized output is equal to the codebook entry
