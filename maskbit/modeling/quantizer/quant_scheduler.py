@@ -47,7 +47,7 @@ class QuantScheduler:
         if weights is None:
             weights = [1.0] * num_quantizers
         self.weights = [w / sum(weights) for w in weights]
-        assert len(self.weights) == num_quantizers and sum(self.weights) == 1.
+        assert len(self.weights) == num_quantizers and all(w >= 0 for w in self.weights)
         assert self.schedule_type in ['uniform', 'weighted']
         self.batch_size = batch_size
         self.global_step = 0
@@ -80,13 +80,15 @@ class QuantScheduler:
                   f"weights: {self.weights}, batch size: {self.batch_size}, step: {self.global_step}, "
                   f"num_levels: {num_levels}")
             self.repr = True
+        
+        loss_weight = self.weights
 
-        return num_levels
+        return num_levels, loss_weight
 
 
 if __name__ == "__main__":
     # Example usage
     quant_scheduler = QuantScheduler(num_quantizers=8)
     quant_scheduler.set_step(1000)
-    num_levels = quant_scheduler.get_num_levels()
-    print(num_levels)
+    num_levels, loss_weight = quant_scheduler.get_num_levels()
+    print(num_levels, loss_weight)

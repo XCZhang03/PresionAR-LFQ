@@ -62,7 +62,7 @@ class ResidualLFQ(torch.nn.Module):
 
         self.quantizers = torch.nn.ModuleList(self.quantizers)
     
-    def forward(self, z: torch.Tensor, num_levels: Union[List,int]=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
+    def forward(self, z: torch.Tensor, num_levels: Union[List,int]=None, loss_weight: List[int]=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
         """ Forward pass of the quantizer.
 
         Args:
@@ -89,6 +89,12 @@ class ResidualLFQ(torch.nn.Module):
         assert len(num_levels) == bs
         assert all([(num_levels[ind] <= self.num_quantizers and num_levels[ind] >= 1) for ind in range(bs)])
 
+        if loss_weight is None:
+            loss_weight = [1] * self.num_quantizers  
+        else:
+            assert len(loss_weight) == self.num_quantizers, "loss_weight should be a list of length num_quantizers"
+        loss_weight = torch.tensor(loss_weight, dtype=z.dtype, device=z.device).contiguous() 
+        loss_weight = loss_weight / torch.sum(loss_weight)  # normalize the loss weight
 
 
         for ind, quantizer in enumerate(self.quantizers):
@@ -105,10 +111,9 @@ class ResidualLFQ(torch.nn.Module):
         all_result_dict = {key: torch.stack([result_dict[key] for result_dict in all_results], dim=0) for key in all_results[0].keys()}
 
         # sum the losses
-        all_result_dict["quantizer_loss"] = all_result_dict["quantizer_loss"].mean(dim=0)
-        all_result_dict["commitment_loss"] = all_result_dict["commitment_loss"].mean(dim=0)
-        all_result_dict["entropy_loss"] = all_result_dict["entropy_loss"].mean(dim=0)
-
+        all_result_dict["quantizer_loss"] = (all_result_dict["quantizer_loss"] * loss_weight).sum(dim=0)
+        all_result_dict["commitment_loss"] = (all_result_dict["commitment_loss"] * loss_weight).sum(dim=0)
+        all_result_dict["entropy_loss"] = (all_result_dict["entropy_loss"] * loss_weight).sum(dim=0)
         # ## debug the gradient
         # grad = torch.autograd.grad(quantized_out.sum(), z, create_graph=True)[0]
 
@@ -146,7 +151,7 @@ class ResidualLFQ(torch.nn.Module):
 if __name__ == "__main__":
     quantizer = ResidualLFQ(num_quantizers=3, variants=[2,3,3])
     z = torch.randn(3, 10, 32, 32).requires_grad_()
-    quantized, outputs = quantizer(z, num_levels=3)
+    quantized, outputs = quantizer(z, num_levels=3, loss_weight=[2,1,1])
     for key, value in outputs.items():
         print(key, value.shape)
     z_3 = quantizer.get_codebook_entry(outputs['min_encoding_indices'][2], num_level=2)

@@ -72,7 +72,7 @@ class RQModel(BaseModel):
     def get_last_layer(self):
         return self.decoder.conv_out.weight
 
-    def encode(self, x: torch.Tensor, num_levels: Union[List,int]=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
+    def encode(self, x: torch.Tensor, num_levels: Union[List,int]=None, loss_weight: List[int]=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
         """ Encodes the input tensor, i.e. runs the encoder.
 
         Args:
@@ -85,7 +85,7 @@ class RQModel(BaseModel):
                 and losses from the quantizer.
         """
         z = self.encoder(x)
-        z_quantized, result_dict = self.quantize(z, num_levels=num_levels)
+        z_quantized, result_dict = self.quantize(z, num_levels=num_levels, loss_weight=loss_weight)
         return z_quantized, result_dict
 
     def decode(self, z_quantized: torch.Tensor) -> torch.Tensor:
@@ -119,12 +119,13 @@ class RQModel(BaseModel):
         decoded = self.decode(z_quantized)
         return decoded
 
-    def forward(self, input: torch.Tensor, num_levels: Union[List,int]=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
+    def forward(self, input: torch.Tensor, num_levels: Union[List,int]=None, loss_weight: List[int]=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
         """ Runs the model on the input tensor.
 
         Args:
             input -> torch.Tensor: The input image.
             num_levels -> int: The levels of quantization precision.
+            loss_weight -> List[int]: The weights for the codebook loss of each quantizer.
 
         Returns:
             decoded -> torch.Tensor: The decoded image.
@@ -135,7 +136,7 @@ class RQModel(BaseModel):
             self.encoder.eval()
             z_quantized, result_dict = self._finetuning_encoder_forward(input,num_levels=num_levels)
         else:
-            z_quantized, result_dict = self.encode(input,num_levels=num_levels)
+            z_quantized, result_dict = self.encode(input,num_levels=num_levels, loss_weight=loss_weight)
 
         decoded = self.decode(z_quantized)
         return decoded, result_dict

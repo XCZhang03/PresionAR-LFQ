@@ -416,9 +416,9 @@ def main():
             data_time_m.update(time.time() - end)
             # update the quantization scheduler
             quant_scheduler.set_step(global_step)
-            num_levels = quant_scheduler.get_num_levels()
+            num_levels, loss_weight = quant_scheduler.get_num_levels()
             with accelerator.accumulate([model, loss_module]):
-                reconstructed_images, extra_results_dict = model(images, num_levels=num_levels)
+                reconstructed_images, extra_results_dict = model(images, num_levels=num_levels, loss_weight=loss_weight)
 
                 # ########################
                 # autoencoder loss
