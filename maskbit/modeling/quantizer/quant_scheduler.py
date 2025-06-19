@@ -38,7 +38,7 @@ class QuantScheduler:
         num_quantizers: int,
         max_train_steps: int = 1_350_000,
         schedule_type: str = 'uniform',
-        batch_size: int = 32,
+        batch_size: int = 8,
         weights: List[float] = None,
     ):
         self.num_quantizers = num_quantizers
@@ -88,7 +88,7 @@ class QuantScheduler:
 
 if __name__ == "__main__":
     # Example usage
-    quant_scheduler = QuantScheduler(num_quantizers=8)
+    quant_scheduler = QuantScheduler(num_quantizers=4, schedule_type="uniform", weights=[3,1,1,1])
     quant_scheduler.set_step(1000)
     num_levels, loss_weight = quant_scheduler.get_num_levels()
     print(num_levels, loss_weight)
