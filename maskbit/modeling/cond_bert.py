@@ -8,7 +8,7 @@ from einops import rearrange
 from timm.models.vision_transformer import DropPath
 from timm.layers import SwiGLU
 
-from modeling.modules import BaseModel
+from modeling.modules import BaseModel, get_codebook_config
 
 from modeling.attn_block import CondTransformerEncoder
 
@@ -19,9 +19,12 @@ class CondBert(BaseModel):
             stage=1,
             ## token params
             img_size=256,
-            codebook_size=3**10,
             patch_size=16,
-            context_dim=10,  ## number of bits
+            token_size=10,  ## number of bits
+            codebook_size=None,
+            codebook_splits=1,
+            variants=None,
+            ## context params
             ## transformer params
             hidden_dim=768,
             depth=20,
@@ -42,8 +45,17 @@ class CondBert(BaseModel):
     ):
         super().__init__()
         self.register_buffer("stage", torch.tensor(stage, dtype=torch.int32))
+        
+        self.codebook_size, self.token_size, self.variants = get_codebook_config(
+            codebook_size=codebook_size,
+            bits=token_size,
+            variants=variants
+        )
+        self.splits = codebook_splits
+        self.effective_codebook_size = int(self.variants ** (self.token_size // self.splits))
+        self.mask_token = self.effective_codebook_size  # Mask token is the last token in the codebook
+
         self.img_size = img_size
-        self.codebook_size = codebook_size
         self.patch_size = patch_size
         self.seq_len = (img_size // patch_size) ** 2
 
@@ -56,9 +68,8 @@ class CondBert(BaseModel):
         self.num_classes = num_classes
         self.drop_label = num_classes
 
-        
         self.hidden_dim = hidden_dim
-        self.context_dim = context_dim
+        self.context_dim = token_size
         if self.context_conditioning == "channel":
             self.emb_dim = hidden_dim // 2
         else:
@@ -82,24 +93,31 @@ class CondBert(BaseModel):
         )
 
         ### define embedding layers
-        self.tok_emb = nn.Embedding(
-            codebook_size + 1, self.emb_dim
-        )
+        self.tok_emb_list = torch.nn.ModuleList()
+        for _ in range(self.splits):
+            self.tok_emb_list.append(torch.nn.Embedding(self.effective_codebook_size + 1, self.emb_dim))  # +1 for mask token
+        
+        self.proj_weight = nn.ParameterList()
         if tie_embeddings:
-            self.proj_weight = self.tok_emb.weight[:codebook_size, :]
+            for i in range(self.splits):
+                self.proj_weight.append(self.tok_emb_list[i].weight[:self.effective_codebook_size, :])
         else:
-            self.proj_weight = nn.Parameter(
-                torch.empty(codebook_size, self.emb_dim)
-            )
-            nn.init.trunc_normal_(self.proj_weight.data, mean=0.0, std=0.02)
-        self.proj_bias = nn.Parameter(torch.zeros(self.seq_len, codebook_size))
+            for i in range(self.splits):
+                self.proj_weight.append(torch.nn.Parameter(
+                    torch.empty(self.effective_codebook_size, self.emb_dim)
+                ))
+                nn.init.trunc_normal_(self.proj_weight[i].data, mean=0.0, std=0.02)
+        self.proj_bias = torch.nn.ParameterList()
+        for _ in range(self.splits):
+            self.proj_bias.append(torch.nn.Parameter(torch.zeros((self.seq_len), self.effective_codebook_size)))
+
         self.class_emb = nn.Embedding(self.num_classes + 1, hidden_dim)
         self.pos_emb = torch.nn.init.trunc_normal_(torch.nn.Parameter(torch.zeros(1, self.seq_len, self.emb_dim)), mean=0., std=0.02) 
         if tie_context_embeddings:
             self.context_pos_emb = self.pos_emb[:, :self.seq_len, :]
         else:
             self.context_pos_emb = torch.nn.init.trunc_normal_(torch.nn.Parameter(torch.zeros(1, self.seq_len, self.emb_dim)), mean=0., std=0.02)
-        self.context_proj = nn.Linear(context_dim, self.emb_dim)
+        self.context_proj = nn.Linear(self.context_dim, self.emb_dim)
 
         # Last layer after the Transformer block
         self.last_layer = torch.nn.Sequential(
@@ -131,13 +149,15 @@ class CondBert(BaseModel):
         
     def forward(
             self,
-            token_indices: torch.Tensor,   ## [B, H, W] or [B, L]
+            token_indices: torch.Tensor,   ## [B, H, W, G] or [B, L, G]
             context: torch.Tensor,    ## [B, C, H, W]
             class_labels: torch.Tensor,
             drop_label_mask: Optional[torch.Tensor] = None,
     ):
         b = token_indices.size(0)
-        token_indices = token_indices.view(b, -1)  # [B, L]
+        splits = token_indices.shape[-1]
+        assert splits == self.splits, f"Expected {self.splits} splits, but got {splits}"
+        token_indices = token_indices.view(b, -1, splits)  # [B, L, G]
 
         from einops import rearrange
         context = rearrange(context, 'b c h w -> b (h w) c').contiguous()  # [B, L, C]
@@ -147,7 +167,9 @@ class CondBert(BaseModel):
             cls_token[drop_label_mask] = self.drop_label  # Drop condition
         cls_embedding = self.class_emb(cls_token.view(b, -1))
 
-        tok_emb = self.tok_emb(token_indices)
+        tok_emb = self.tok_emb_list[0](token_indices[:, :, 0])  # [B, L, D]
+        for i in range(1, self.splits):
+            tok_emb += self.tok_emb_list[i](token_indices[:, :, i])
         context_emb = self.context_proj(context)
         tok_emb = tok_emb + self.pos_emb
         context_emb = context_emb + self.context_pos_emb
@@ -183,8 +205,10 @@ class CondBert(BaseModel):
 
         x = x[:, :self.seq_len, :]  
         x = self.last_layer(x)
-
-        logits = torch.matmul(x, self.proj_weight.t()) + self.proj_bias  # [B, L, C]
+        logits = []
+        for i in range(self.splits):
+            logits.append(torch.matmul(x, self.proj_weight[i].t()) + self.proj_bias[i]) # [B, L, D]
+        logits = torch.stack(logits, dim=2)  # [B, L, G, D]
 
         return logits
     
@@ -197,9 +221,10 @@ if __name__ == "__main__":
     model = CondBert(
         stage=stage,
         img_size=256,
-        codebook_size=3**10,
+        variants=3,
+        codebook_splits=2,
         patch_size=16,
-        context_dim=10,
+        token_size=10,
         hidden_dim=16,
         depth=2,
         heads=1,
@@ -224,6 +249,14 @@ if __name__ == "__main__":
     image = torch.randn(2, 3, 256, 256).to(device=device, dtype=dtype) * 1e2
     z_quantized, result_dict = vae.encode(image,num_levels=stage)
     token_indices = result_dict['min_encoding_indices'][stage]
+    from modeling.modules.factorization import split_factorized_tokens
+    token_indices = split_factorized_tokens(
+        token_indices,
+        codebook_size=model.effective_codebook_size,
+        splits=model.splits,
+        bits=model.token_size,
+        variants=model.variants
+    )
     class_labels = torch.randint(0, 1000, (2,)).to(device)
     drop_label_mask = torch.zeros(2, dtype=torch.bool).to(device)
     logits = model(
@@ -241,7 +274,11 @@ if __name__ == "__main__":
         context=z_quantized,
         num_samples=z_quantized.shape[0],
         labels=class_labels,
-        mask_token=model.codebook_size,
+        mask_token=model.mask_token,
+        codebook_splits=model.splits,
+        codebook_size=model.codebook_size,
+        bits=model.token_size,
+        variants=model.variants,
     )[0]
     print(image.shape)
 

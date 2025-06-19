@@ -153,6 +153,10 @@ def conditional_sample(
     guidance_annealing: Text = "none",
     use_sampling_annealing: bool = False,
     scale_pow: float = 4.0,
+    codebook_size: int = None,
+    codebook_splits: int = 1,
+    bits: int = None,
+    variants: int = None,
     use_tqdm: bool = False,
 ) -> Tuple[torch.Tensor, List[torch.Tensor]]:
     """Sample from the model.
@@ -196,9 +200,10 @@ def conditional_sample(
 
     drop_labels = torch.ones(num_samples, dtype=bool, device=device)
     spatial_size = int(patch_size ** 2)
+    num_splits = int(codebook_splits)
     
-    masked_tokens = torch.full((num_samples, spatial_size), mask_token, device=device)
-    num_maskable = spatial_size 
+    masked_tokens = torch.full((num_samples, spatial_size, num_splits), mask_token, device=device)
+    num_maskable = spatial_size * num_splits
     mask = (masked_tokens == mask_token)
 
     l_full_tokens = []
@@ -238,7 +243,7 @@ def conditional_sample(
         distribution = torch.distributions.Categorical(probabilities)
         predicted_tokens = distribution.sample()
 
-        num_masked = torch.sum(mask, dim=tuple(range(1, len(mask.shape))))[0]
+        num_masked = torch.sum(mask, dim=(1,2))[0]
 
         predicted_tokens = torch.where(mask, predicted_tokens, masked_tokens)
 
@@ -257,12 +262,12 @@ def conditional_sample(
         sorted_confidence = torch.sort(confidence.view(num_samples, -1), dim=-1).values
         threshold = sorted_confidence[:, num_tokens_to_mask - 1]
 
-        should_mask = (confidence <= threshold.unsqueeze(-1))
+        should_mask = (confidence <= threshold.unsqueeze(-1).unsqueeze(-1))
         masked_tokens = torch.where(should_mask, mask_token, predicted_tokens)
         mask = (masked_tokens == mask_token)
         l_full_tokens.append(predicted_tokens)
 
-    # predicted_tokens = combine_factorized_tokens(predicted_tokens, codebook_size, codebook_splits)
+    predicted_tokens = combine_factorized_tokens(predicted_tokens, codebook_size=codebook_size, splits=codebook_splits, bits=bits, variants=variants)
 
     generated_image = vqgan_model.decode_tokens(predicted_tokens, context=context, num_level=stage)
     return generated_image, l_full_tokens
