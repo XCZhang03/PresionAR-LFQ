@@ -69,11 +69,20 @@ class QuantScheduler:
             List[int]: The number of levels for each batch.
         """
         if self.schedule_type == 'uniform':
-            num_levels = np.random.randint(1, self.num_quantizers + 1, size=self.batch_size).tolist()
+            # num_levels = np.random.randint(1, self.num_quantizers + 1, size=self.batch_size,).tolist()
+            count_levels = [round(self.batch_size * (1 / self.num_quantizers))] * self.num_quantizers
         elif self.schedule_type == 'weighted':
-            num_levels = []
-            for i in range(self.batch_size):
-                num_levels.append(np.random.choice(self.num_quantizers, p=self.weights) + 1)
+            # num_levels = []
+            # for i in range(self.batch_size):
+            #     num_levels.append(np.random.choice(self.num_quantizers, p=self.weights) + 1)
+            count_levels = [round(self.batch_size * w) for w in self.weights]
+        num_levels = []
+        for i, count in enumerate(count_levels):
+            num_levels.extend([i + 1] * count)
+        while len(num_levels) < self.batch_size:
+            num_levels.append(np.random.randint(1, self.num_quantizers + 1))
+        np.random.shuffle(num_levels)
+        num_levels = num_levels[:self.batch_size]
         
         if not self.repr:
             print(f"QuantScheduler: {self.schedule_type} schedule with {self.num_quantizers} quantizers, "
