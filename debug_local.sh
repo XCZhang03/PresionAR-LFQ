@@ -37,9 +37,8 @@ SCRIPT_ARGS="
     experiment.generate_every=100 \
     experiment.eval_every=400 \
     experiment.run_name=${RUN_NAME} \
-    model.vq_model.schedule_type=weighted \
-    model.vq_model.weights=[3,1,1,1] \
     experiment.logger=tensorboard \
+    model.vq_model.scales=3 \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly
