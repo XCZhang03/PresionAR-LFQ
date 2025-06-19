@@ -66,7 +66,7 @@ srun bash -c "
     experiment.save_every=1_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
-    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/1level/current/checkpoints/checkpoint_111  \
+    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level/2025-05-25-04-13-13-EDT/checkpoints/checkpoint_3  \
     "
 
 
