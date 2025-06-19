@@ -33,14 +33,8 @@ def combine_factorized_tokens(tokens: torch.Tensor, codebook_size: int=None, spl
         combined_tokens -> torch.Tensor: Tensor of shape (batch_size, n).
     """
     combined_tokens = torch.zeros((tokens.shape[0], tokens.shape[1]), device=tokens.device)
-    if bits is None and variants is None:
-        assert codebook_size is not None, "Either bits or codebook_size must be provided."
-        bit_shift = int(math.log2(codebook_size)) // splits
-    elif bits is not None:
-        assert variants is not None, "If bits is provided, variants must also be provided."
-        bit_shift = bits // splits
-    if variants is None:
-        variants = 2
+    codebook_size, bits, variants = get_codebook_config(codebook_size, bits, variants)
+    bit_shift = bits // splits 
     for i in range(splits):
         combined_tokens += (tokens[..., i] * (variants ** (i * bit_shift))).long()
 
@@ -59,14 +53,8 @@ def split_factorized_tokens(tokens: torch.Tensor, codebook_size: int=None, split
     Returns:
         split_tokens -> torch.Tensor: Tensor of shape (batch_size, n, m).
     """
-    if bits is None and variants is None:
-        bit_shift = int(math.log2(codebook_size)) // splits
-    elif bits is not None:
-        assert variants is not None, "If bits is provided, variants must also be provided."
-        bit_shift = bits // splits
-    
-    if variants is None:
-        variants = 2
+    codebook_size, bits, variants = get_codebook_config(codebook_size, bits, variants)
+    bit_shift = bits // splits 
     
     basis = variants ** bit_shift
 
