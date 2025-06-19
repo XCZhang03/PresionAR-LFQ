@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-4-from_scratch
+#SBATCH --job-name=vae-4-s-h_4lvl-from_scratch-half_weight
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -39,8 +39,9 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="4level-from_scratch-long"
+# RUN_NAME="4level-from_scratch-long"
 # RUN_NAME="4level-resume_from_1lvl"
+RUN_NAME="4lvl-from_scratch-half_weight"
 ####################
 
 
@@ -66,6 +67,8 @@ srun bash -c "
     experiment.save_every=1_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
+    model.vq_model.schedule_type=weighted \
+    model.vq_model.weights=[3,1,1,1] \
     "
 
 
