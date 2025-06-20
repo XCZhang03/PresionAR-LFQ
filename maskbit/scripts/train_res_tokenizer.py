@@ -156,7 +156,7 @@ def main():
     #########################
     logger.info("Creating model and optimizer")
 
-    model = RQModel(config.model.vq_model)
+    model = RQModel(config.model.vq_model, finetune_decoder=config.model.vq_model.get("finetune_decoder", False))
 
     # Create the EMA model
     if config.training.use_ema:
