@@ -38,6 +38,9 @@ SCRIPT_ARGS="
     experiment.eval_every=400 \
     experiment.run_name=${RUN_NAME} \
     experiment.logger=tensorboard \
+    model.vq_model.finetune_decoder=true \
+    model.vq_model.schedule_type="weighted"  \
+    model.vq_model.weights=[1,0,0,0] \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly
