@@ -71,7 +71,7 @@ srun bash -c "
     experiment.save_every=1_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
-    model.vq_model.entropy_gamma=[1.0, 0.5, 0.25, 0.125] \
+    model.vq_model.entropy_gamma=[1.0,0.5,0.25,0.125] \
     "
 
 
