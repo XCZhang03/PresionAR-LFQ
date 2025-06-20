@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-2-large_batch
+#SBATCH --job-name=vae-2-0decoder_ft
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
