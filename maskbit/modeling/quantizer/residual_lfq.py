@@ -9,7 +9,7 @@ from modeling.quantizer.lookup_free import LookupFreeQuantizer
 from modeling.quantizer.mutivariante_lfq import MultivariantLFQ
 from modeling.quantizer.quant_scheduler import agg_quantized
 
-
+from omegaconf import ListConfig
 class ResidualLFQ(torch.nn.Module):
     def __init__(
             self,
@@ -20,7 +20,7 @@ class ResidualLFQ(torch.nn.Module):
             commitment_cost: float = 0.25,
             entropy_loss_weight: float = 0.1,
             entropy_loss_temperature: float = 0.01,
-            entropy_gamma: float = 1.0,
+            entropy_gamma: Union[float, List[float]] = 1.0,
     ):
         super().__init__()
         self.token_size = token_size
@@ -31,13 +31,20 @@ class ResidualLFQ(torch.nn.Module):
         self.entropy_gamma = entropy_gamma
         assert num_quantizers == len(variants)
 
-        if isinstance(scales, list):
+        if isinstance(scales, (ListConfig, list)):
             assert len(scales) == num_quantizers
             self.scales = scales
         elif isinstance(scales, int):
             self.scales = [scales ** -ind for ind in range(num_quantizers)]
         else:
             self.scales = [2 ** -ind for ind in range(num_quantizers)]
+
+        if isinstance(entropy_gamma, (ListConfig, list)):
+            assert len(entropy_gamma) == num_quantizers, "entropy_gamma should be a list of length num_quantizers"
+        elif isinstance(entropy_gamma, float):
+            entropy_gamma = [entropy_gamma] * num_quantizers
+        else:
+            raise ValueError("entropy_gamma should be a float or a list of floats")
 
         self.quantizers = []
         # self.quantizers.append(
@@ -56,7 +63,7 @@ class ResidualLFQ(torch.nn.Module):
                     commitment_cost=commitment_cost,
                     entropy_loss_weight=entropy_loss_weight,
                     entropy_loss_temperature=entropy_loss_temperature,
-                    entropy_gamma=entropy_gamma,
+                    entropy_gamma=entropy_gamma[ind],
                     scale = self.scales[ind],
                     variants=variants[ind],
                 )
