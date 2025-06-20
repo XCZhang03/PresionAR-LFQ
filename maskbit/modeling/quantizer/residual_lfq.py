@@ -38,6 +38,7 @@ class ResidualLFQ(torch.nn.Module):
             self.scales = [scales ** -ind for ind in range(num_quantizers)]
         else:
             self.scales = [2 ** -ind for ind in range(num_quantizers)]
+        print(f"quantizer scales: {self.scales}")
 
         if isinstance(entropy_gamma, (ListConfig, list)):
             assert len(entropy_gamma) == num_quantizers, "entropy_gamma should be a list of length num_quantizers"
@@ -45,6 +46,7 @@ class ResidualLFQ(torch.nn.Module):
             entropy_gamma = [entropy_gamma] * num_quantizers
         else:
             raise ValueError("entropy_gamma should be a float or a list of floats")
+        print(f"quantizer entropy_gamma: {entropy_gamma}")
 
         self.quantizers = []
         # self.quantizers.append(
