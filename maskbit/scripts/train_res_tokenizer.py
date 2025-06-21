@@ -632,7 +632,9 @@ def eval_reconstruction(
     model.eval()
     evaluator.reset_metrics()
     local_model = accelerator.unwrap_model(model)
+    num_eval_examples = 0
     for batch in eval_loader:
+        num_eval_examples += len(batch["image"])
         for level in range(local_model.quantize.num_quantizers):
             images = batch["image"].to(
                 accelerator.device, memory_format=torch.contiguous_format, non_blocking=True
@@ -643,6 +645,7 @@ def eval_reconstruction(
             original_images = torch.clamp(original_images, 0.0, 1.0)
             evaluator.update(level, original_images, reconstructed_images, model_dict["min_encoding_indices"])
     model.train()
+    print(f"Evaluated {num_eval_examples} examples on device {accelerator.device}.")
     return evaluator.result()
 
 

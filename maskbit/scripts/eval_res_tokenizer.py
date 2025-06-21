@@ -134,8 +134,9 @@ def eval_reconstruction(
     model.eval()
     evaluator.reset_metrics()
 
-
+    num_eval_examples = 0
     for batch in tqdm.tqdm(eval_loader):
+        num_eval_examples += len(batch["image"])
         for level in range(model.quantize.num_quantizers):
             images = batch["image"].to(
                 "cuda:0", memory_format=torch.contiguous_format, non_blocking=True
@@ -165,7 +166,7 @@ def eval_reconstruction(
                     rec_img = torchvision.transforms.functional.to_pil_image(rec_img)
                     rec_img.save(path)
 
-
+    print(f"Evaluated {num_eval_examples} examples on device {device}.")
     return evaluator.result()
 
 
