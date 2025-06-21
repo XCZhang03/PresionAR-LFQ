@@ -7,7 +7,7 @@ cd $ACCELERATE_DIR
 ######################
 ### Set GPUs #########
 ######################
-GPUS_PER_NODE=1
+GPUS_PER_NODE=2
 export CUDA_VISIBLE_DEVICES=6,7
 ######################
 
@@ -32,10 +32,10 @@ SCRIPT_ARGS="
     training.per_gpu_batch_size=16 \
     training.gradient_accumulation_steps=2 \
     dataset.params.train_shards_path_or_url=./shards/train/imagenet-train-{0000..0008}.tar \
-    dataset.params.eval_shards_path_or_url=./shards/imagenet-val-0009.tar \
+    dataset.params.eval_shards_path_or_url=./shards/val/imagenet-val-0000.tar \
     experiment.save_every=100 \
     experiment.generate_every=100 \
-    experiment.eval_every=400 \
+    experiment.eval_every=100 \
     experiment.run_name=${RUN_NAME} \
     experiment.logger=tensorboard \
     model.vq_model.finetune_decoder=true \
