@@ -50,6 +50,7 @@ srun bash -c "
     config=$config_file \
     experiment.vqgan_checkpoint=$checkpoint_path \
     experiment.run_name=$RUN_NAME \
+    training.per_gpu_batch_size=32 \
     "
 
 
