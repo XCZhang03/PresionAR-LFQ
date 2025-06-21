@@ -27,7 +27,7 @@ export LOG_LEVEL=INFO
 #######################
 #### checkpoint #######
 #######################
-checkpoint_path=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-mixed_from_scratch-long/archive/checkpoint-700000/ema_model
+checkpoint_path=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-ft-decoder-0/checkpoints/checkpoint_41/ema_model
 #######################
 
 ###################
