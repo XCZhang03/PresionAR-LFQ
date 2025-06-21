@@ -357,6 +357,9 @@ def main():
 
         if config.training.use_ema:
             ema_model.set_step(global_step)
+            if config.model.vq_model.get("finetune_decoder", False):
+                ema_model.copy_to(model.parameters())
+                # ema_model.set_step(1)
         
         init_checkpoint = True
 
