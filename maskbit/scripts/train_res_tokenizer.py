@@ -358,8 +358,10 @@ def main():
         if config.training.use_ema:
             ema_model.set_step(global_step)
             if config.model.vq_model.get("finetune_decoder", False):
+                ## fresh start the model with ema weights
                 ema_model.copy_to(model.parameters())
-                # ema_model.set_step(1)
+                if config.model.vq_model.get("restart_ema", False):
+                    ema_model.set_step(0)
         
         init_checkpoint = True
 
