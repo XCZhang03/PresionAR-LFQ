@@ -18,6 +18,9 @@ from utils.logger import setup_logger
 from modeling.rqgan import RQModel
 from evaluator.evaluator import ResidualTokenizerEvaluator
 
+from time import strftime, localtime
+
+
 logger = setup_logger(name="MaskBit", log_level="INFO", use_accelerate=False)
 
 device = "cuda:0"
@@ -43,6 +46,14 @@ def main():
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = False
 
+    work_dir = os.environ.get('WORKSPACE', './runs')
+    cur_time = strftime("%Y-%m-%d %H:%M:%S", localtime())
+    output_dir = os.path.join(work_dir, "outputs", config.experiment.name, config.experiment.run_name, cur_time)
+    logger = setup_logger(name="MaskBit", log_level="INFO", use_accelerate=False, output_dir=f"{output_dir}/logs")
+    config_path = Path(output_dir) / "config.yaml"
+    logger.info(f"Saving config to {config_path}")
+    OmegaConf.save(config, config_path)
+    logger.info(f"Config:\n{OmegaConf.to_yaml(config)}", main_process_only=False)
 
     #########################
     # MODELS                #
@@ -106,7 +117,7 @@ def main():
         model,
         eval_dataloader,
         evaluator,
-        output_dir=output_dir
+        output_dir=None
     )
 
     logger.info(f"EVALUATION")
