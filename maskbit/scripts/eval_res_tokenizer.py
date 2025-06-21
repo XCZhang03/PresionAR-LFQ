@@ -53,7 +53,7 @@ def main():
     config_path = Path(output_dir) / "config.yaml"
     logger.info(f"Saving config to {config_path}")
     OmegaConf.save(config, config_path)
-    logger.info(f"Config:\n{OmegaConf.to_yaml(config)}", main_process_only=False)
+    logger.info(f"Config:\n{OmegaConf.to_yaml(config)}")
 
     #########################
     # MODELS                #
