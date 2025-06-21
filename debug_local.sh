@@ -7,7 +7,7 @@ cd $ACCELERATE_DIR
 ######################
 ### Set GPUs #########
 ######################
-GPUS_PER_NODE=2
+GPUS_PER_NODE=1
 export CUDA_VISIBLE_DEVICES=6,7
 ######################
 
@@ -22,7 +22,7 @@ SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="4lvl-test-loss_weight"
+RUN_NAME="4lvl-test-sd-2"
 ####################
 
 
@@ -41,6 +41,7 @@ SCRIPT_ARGS="
     model.vq_model.finetune_decoder=true \
     model.vq_model.schedule_type="weighted"  \
     model.vq_model.weights=[1,0,0,0] \
+    experiment.init_checkpoint="${ACCELERATE_DIR}/runs/outputs/rqbit_tokenizer_10bit/4lvl-test-loss_weight/archive/checkpoint-100" \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly

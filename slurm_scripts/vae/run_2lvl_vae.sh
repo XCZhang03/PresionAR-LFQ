@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-2-1decoder_ft
+#SBATCH --job-name=vae-2-0dec_ft_resume_ema
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -44,7 +44,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 # RUN_NAME="2level-2variant-from_scratch-long"
 # RUN_NAME="2level-large_batch"
 # RUN_NAME="2level-ft-decoder-0"
-RUN_NAME="2level-ft-decoder-1"
+# RUN_NAME="2level-ft-decoder-1"
+RUN_NAME="2level-ft-decoder-0-resume_ema"
 ####################
 
 
@@ -72,7 +73,7 @@ srun bash -c "
     experiment.run_name=${RUN_NAME} \
     model.vq_model.finetune_decoder=true \
     model.vq_model.schedule_type="weighted"  \
-    model.vq_model.weights=[0,1] \
+    model.vq_model.weights=[1,0] \
     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-mixed_from_scratch-long/archive/checkpoint-700000 \
     "
 
