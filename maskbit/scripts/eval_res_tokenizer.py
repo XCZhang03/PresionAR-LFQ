@@ -149,7 +149,7 @@ def eval_reconstruction(
             reconstructed_images = torch.clamp(reconstructed_images, 0.0, 1.0)
             original_images = torch.clamp(original_images, 0.0, 1.0)
 
-            evaluator.update(original_images, reconstructed_images, model_dict["min_encoding_indices"])
+            evaluator.update(level, original_images, reconstructed_images, model_dict["min_encoding_indices"])
 
             if output_dir is not None:
                 root = Path(output_dir) / "eval_images" / f"level_{level}"
