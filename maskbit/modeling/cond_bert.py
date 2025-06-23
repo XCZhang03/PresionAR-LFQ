@@ -41,7 +41,7 @@ class CondBert(BaseModel):
             num_classes=1000,
             ## Bert params
             tie_embeddings=False,
-            tie_context_embeddings=False,
+            tie_context_pos_embeddings=False,
     ):
         super().__init__()
         self.register_buffer("stage", torch.tensor(stage, dtype=torch.int32))
@@ -115,8 +115,8 @@ class CondBert(BaseModel):
 
         self.class_emb = nn.Embedding(self.num_classes + 1, hidden_dim)
         self.pos_emb = torch.nn.init.trunc_normal_(torch.nn.Parameter(torch.zeros(1, self.seq_len, self.emb_dim)), mean=0., std=0.02) 
-        if tie_context_embeddings:
-            self.context_pos_emb = self.pos_emb[:, :self.seq_len, :]
+        if tie_context_pos_embeddings:
+            self.context_pos_emb = self.pos_emb
         else:
             self.context_pos_emb = torch.nn.init.trunc_normal_(torch.nn.Parameter(torch.zeros(1, self.seq_len, self.emb_dim)), mean=0., std=0.02)
         self.context_proj = nn.Linear(self.context_dim, self.emb_dim)

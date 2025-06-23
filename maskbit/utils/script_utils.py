@@ -41,7 +41,7 @@ def get_model_kwargs(config):
         label_conditioning=config.model.mlm_model.label_conditioning,
         attn_l2_norm=config.model.mlm_model.attn_l2_norm,
         tie_embeddings=config.model.mlm_model.get("tie_embeddings", False),
-        tie_context_embeddings=config.model.mlm_model.get("tie_context_embeddings", False),
+        tie_context_pos_embeddings=config.model.mlm_model.get("tie_context_pos_embeddings", False),
     )
 
 def get_conditional_sampling_kwargs(config):

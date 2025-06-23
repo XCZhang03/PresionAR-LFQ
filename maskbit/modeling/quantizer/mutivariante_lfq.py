@@ -152,7 +152,7 @@ class MultivariantLFQ(torch.nn.Module):
         """
         assert tokens.shape[-1] == self.token_size
         bits = self.denormalize(tokens)
-        indices = reduce(bits * self.basis, '... c -> ...', 'sum').to(torch.int32)
+        indices = reduce(bits * self.basis, '... c -> ...', 'sum').to(dtype=torch.long)
         return indices
 
     def convert_indices_to_tokens(self, indices: torch.Tensor) -> torch.Tensor:
