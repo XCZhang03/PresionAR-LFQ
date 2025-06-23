@@ -29,27 +29,10 @@ from modeling.quantizer.quant_scheduler import QuantScheduler
 from evaluator.evaluator import ResidualTokenizerEvaluator
 
 from utils.viz_utils import make_viz_from_samples
-
+from utils.script_utils import get_config, get_save_iteration
 from torchinfo import summary
 from time import strftime, localtime
 
-
-def get_config():
-    cli_conf = OmegaConf.from_cli()
-
-    yaml_conf = OmegaConf.load(cli_conf.config)
-    conf = OmegaConf.merge(yaml_conf, cli_conf)
-    return conf
-
-def get_save_iteration(project_dir):
-    output_dir = os.path.join(project_dir, "checkpoints")
-    if os.path.exists(output_dir):
-        checkpoint_list = list(glob.glob(os.path.join(output_dir, "checkpoint*")))
-        if len(checkpoint_list) > 0:
-            fn = lambda x: int(x.split('/')[-1].split('_')[-1])
-            checkpoint_indices = [fn(x) for x in checkpoint_list]
-            return max(checkpoint_indices) + 1
-    return 0
 
 
 def main():

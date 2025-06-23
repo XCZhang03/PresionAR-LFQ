@@ -19,7 +19,7 @@ class CondBert(BaseModel):
             stage=1,
             ## token params
             img_size=256,
-            patch_size=16,
+            input_stride=16,
             token_size=10,  ## number of bits
             codebook_size=None,
             codebook_splits=1,
@@ -53,11 +53,13 @@ class CondBert(BaseModel):
         )
         self.splits = codebook_splits
         self.effective_codebook_size = int(self.variants ** (self.token_size // self.splits))
+        assert self.effective_codebook_size ** self.splits == self.codebook_size, \
+            f"Effective codebook size should match the codebook size" 
         self.mask_token = self.effective_codebook_size  # Mask token is the last token in the codebook
 
         self.img_size = img_size
-        self.patch_size = patch_size
-        self.seq_len = (img_size // patch_size) ** 2
+        self.input_stride = input_stride
+        self.seq_len = (img_size // input_stride) ** 2
 
         assert context_conditioning in ["control", "cross", "concat", "adaln", "embed", "channel"],  \
             f'context_conditioning must be one of ["control", "cross", "concat", "adaln", "embed"], but got {context_conditioning}'
