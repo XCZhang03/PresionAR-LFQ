@@ -44,21 +44,13 @@ SCRIPT_ARGS="
     training.gradient_accumulation_steps=1 \
     dataset.params.train_shards_path_or_url=./shards/train/imagenet-train-{0000..0008}.tar \
     dataset.params.eval_shards_path_or_url=./shards/val/imagenet-val-0000.tar \
-    experiment.save_every=1000 \
+    experiment.save_every=100 \
     experiment.generate_every=100 \
-    experiment.eval_loss_every=100 \
-    experiment.eval_gen_every=100 \
+    experiment.eval_every=200 \
+    experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
     experiment.logger=tensorboard \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
-    model.mlm_model.depth=20 \
-    model.mlm_model.num_heads=12 \
-    model.mlm_model.hidden_size=768 \
-    model.mlm_model.num_steps=2 \
-    model.mlm_model.tie_embeddings=true \
-    model.mlm_model.tie_context_pos_embeddings=true \
-    model.mlm_model.label_conditioning=concat \
-    model.mlm_model.context_conditioning=control \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly

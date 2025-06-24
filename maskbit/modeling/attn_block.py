@@ -116,7 +116,6 @@ class SelfAttention(nn.Module):
         
         using_flash = self.using_flash and attn_bias is None and main_type != torch.float32 and next(self.parameters()).is_cuda
         using_xform = self.using_xform and next(self.parameters()).is_cuda
-        print(f'using_flash={using_flash}, using_xform={using_xform}, main_type={main_type}')
         if using_flash or self.using_xform: q, k, v = qkv.unbind(dim=2); dim_cat = 1   # q or k or v: BLHc
         else: q, k, v = qkv.permute(2, 0, 3, 1, 4).unbind(dim=0); dim_cat = 2               # q or k or v: BHLc
         

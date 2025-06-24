@@ -58,7 +58,7 @@ srun bash -c "
     accelerate launch \
     $ACCELERATE_DIR/scripts/train_cond_mlm.py \
     config=$config_file \
-    training.per_gpu_batch_size=32 \
+    training.per_gpu_batch_size=64 \
     training.gradient_accumulation_steps=1 \
     experiment.save_every=100 \
     experiment.generate_every=100 \
