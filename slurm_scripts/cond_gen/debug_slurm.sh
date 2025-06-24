@@ -66,6 +66,7 @@ srun bash -c "
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
+    training.mixed_precision="bf16" \
     "
 
 
