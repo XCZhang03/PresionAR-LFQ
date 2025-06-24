@@ -25,6 +25,11 @@ SCRIPT="${ACCELERATE_DIR}/scripts/train_cond_mlm.py"
 RUN_NAME="test-stage1-conditioning"
 ####################
 
+###################
+### Config file ###
+###################
+config_file=$ACCELERATE_DIR/configs/cond_gen/cond_generator_10bit_4lvl.yaml
+###################
 
 ####################
 ## Tokenizer ckpt ##
@@ -34,8 +39,8 @@ vqgan_checkpoint="/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-
 
 ## change the batch size according to GPU memory
 SCRIPT_ARGS="
-    config=${ACCELERATE_DIR}/configs/cond_gen/cond_generator_10bit.yaml \
-    training.per_gpu_batch_size=16 \
+    config=${config_file} \
+    training.per_gpu_batch_size=32 \
     training.gradient_accumulation_steps=1 \
     dataset.params.train_shards_path_or_url=./shards/train/imagenet-train-{0000..0008}.tar \
     dataset.params.eval_shards_path_or_url=./shards/val/imagenet-val-0000.tar \
