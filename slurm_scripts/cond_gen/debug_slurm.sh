@@ -13,6 +13,7 @@
 #SBATCH --gres=gpu:1                # number of GPUs per node
 #SBATCH -t 0-01:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
+#SBATCH --account=kempner_sham_lab
 
 ######################
 ### Set enviroment ###
