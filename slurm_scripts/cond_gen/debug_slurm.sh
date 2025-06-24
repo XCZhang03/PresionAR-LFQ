@@ -63,7 +63,8 @@ srun bash -c "
     training.gradient_accumulation_steps=1 \
     experiment.save_every=100 \
     experiment.generate_every=100 \
-    experiment.eval_every=200 \
+    experiment.eval_gen_every=100 \
+    experiment.eval_loss_every=200 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
