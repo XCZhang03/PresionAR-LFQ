@@ -68,6 +68,7 @@ srun bash -c "
     experiment.run_name=${RUN_NAME} \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
     training.mixed_precision="bf16" \
+    model.mlm_model.num_steps=4 \
     "
 
 
