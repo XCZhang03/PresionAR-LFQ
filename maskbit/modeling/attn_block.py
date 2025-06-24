@@ -101,8 +101,8 @@ class SelfAttention(nn.Module):
         self.proj = nn.Linear(embed_dim, embed_dim)
         self.proj_drop = nn.Dropout(proj_drop, inplace=True) if proj_drop > 0 else nn.Identity()
         self.attn_drop: float = attn_drop
-        self.using_flash = flash_if_available and flash_attn_func is not None
-        self.using_xform = flash_if_available and memory_efficient_attention is not None
+        self.using_flash = flash_if_available and flash_attn_func is not None and next(self.parameters()).device == torch.device('cuda')  # xformers only supports cuda
+        self.using_xform = flash_if_available and memory_efficient_attention is not None and next(self.parameters()).device == torch.device('cuda')  # xformers only supports cuda
         
 
     
