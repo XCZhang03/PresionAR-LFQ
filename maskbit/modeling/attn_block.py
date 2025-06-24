@@ -103,7 +103,7 @@ class SelfAttention(nn.Module):
         self.attn_drop: float = attn_drop
         self.using_flash = flash_if_available and flash_attn_func is not None and next(self.parameters()).is_cuda
         self.using_xform = flash_if_available and memory_efficient_attention is not None and next(self.parameters()).is_cuda
-
+        breakpoint()
     
     
     
