@@ -109,15 +109,27 @@ class RQModel(BaseModel):
         Returns:
             decoded -> torch.Tensor: The decoded image.
         """
-        z_quantized = self.quantize.get_codebook_entry(tokens, num_level=num_level) ## (b, h, w, c) or (b, h*w, c)
-        ss = int(math.sqrt(float(z_quantized.size(1)))) if len(z_quantized.shape) <= 3 else int(z_quantized.size(1))
-        z_quantized = z_quantized.reshape(z_quantized.size(0), ss, ss, -1)
-        z_quantized = rearrange(z_quantized, 'b h w c -> b c h w').contiguous()
+        z_quantized = self.get_codebook_entry(tokens, num_level=num_level)
         if context is not None:
             assert num_level is not None, "only decode one level when context is provided"
             z_quantized = z_quantized + context
         decoded = self.decode(z_quantized)
         return decoded
+    
+    def get_codebook_entry(self, tokens: torch.Tensor, num_level: int=None) -> torch.Tensor:
+        """ Gets the codebook entry for the given tokens.
+
+        Args:
+            tokens -> torch.Tensor: The token indices. shape: (n, b, h, w) or (n, b, h*w)
+
+        Returns:
+            z_quantized -> torch.Tensor: The quantized latent representation.
+        """
+        z_quantized = self.quantize.get_codebook_entry(tokens, num_level=num_level)
+        ss = int(math.sqrt(float(z_quantized.size(1)))) if len(z_quantized.shape) <= 3 else int(z_quantized.size(1))
+        z_quantized = z_quantized.reshape(z_quantized.size(0), ss, ss, -1)
+        z_quantized = rearrange(z_quantized, 'b h w c -> b c h w').contiguous()
+        return z_quantized
 
     def forward(self, input: torch.Tensor, num_levels: Union[List,int]=None, loss_weight: List[int]=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
         """ Runs the model on the input tensor.
@@ -165,14 +177,14 @@ class RQModel(BaseModel):
 
 if __name__ == "__main__":
     from omegaconf import OmegaConf
-    config = OmegaConf.load("configs/tokenizer/rqbit_tokenizer_10bit.yaml").model.vq_model
+    config = OmegaConf.load("maskbit/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml").model.vq_model
     model = RQModel(config)
     print(model)
     print(model.codebook_size)
     image = torch.randn(2, 3, 256, 256)
     z_quantized, result_dict = model.encode(image,num_levels=1)
     print(z_quantized.shape)
-    decoded_tokens = model.decode_tokens(result_dict["min_encoding_indices"])
+    decoded_tokens = model.decode_tokens(result_dict["min_encoding_indices"][0], num_level=0)
     print(decoded_tokens.shape)
     decoded = model.decode(z_quantized)
     print(decoded.shape)
