@@ -101,9 +101,8 @@ class SelfAttention(nn.Module):
         self.proj = nn.Linear(embed_dim, embed_dim)
         self.proj_drop = nn.Dropout(proj_drop, inplace=True) if proj_drop > 0 else nn.Identity()
         self.attn_drop: float = attn_drop
-        self.using_flash = flash_if_available and flash_attn_func is not None and next(self.parameters()).is_cuda
-        self.using_xform = flash_if_available and memory_efficient_attention is not None and next(self.parameters()).is_cuda
-        breakpoint()
+        self.using_flash = flash_if_available and flash_attn_func is not None
+        self.using_xform = flash_if_available and memory_efficient_attention is not None
     
     
     
@@ -115,7 +114,8 @@ class SelfAttention(nn.Module):
         main_type = qkv.dtype
         # qkv: BL3Hc
         
-        using_flash = self.using_flash and attn_bias is None and qkv.dtype != torch.float32
+        using_flash = self.using_flash and attn_bias is None and main_type != torch.float32 and next(self.parameters()).is_cuda
+        using_xform = self.using_xform and next(self.parameters()).is_cuda
         print(f'using_flash={self.using_flash}, using_xform={self.using_xform}, main_type={main_type}')
         if using_flash or self.using_xform: q, k, v = qkv.unbind(dim=2); dim_cat = 1   # q or k or v: BLHc
         else: q, k, v = qkv.permute(2, 0, 3, 1, 4).unbind(dim=0); dim_cat = 2               # q or k or v: BHLc
@@ -131,7 +131,7 @@ class SelfAttention(nn.Module):
         dropout_p = self.attn_drop if self.training else 0.0
         if using_flash:
             oup = flash_attn_func(q.to(dtype=main_type), k.to(dtype=main_type), v.to(dtype=main_type), dropout_p=dropout_p, softmax_scale=self.scale).view(B, L, C)
-        elif self.using_xform:
+        elif using_xform:
             oup = memory_efficient_attention(q.to(dtype=main_type), k.to(dtype=main_type), v.to(dtype=main_type), attn_bias=None, p=dropout_p, scale=self.scale).view(B, L, C)
         else:
             oup = slow_attn(query=q, key=k, value=v, scale=self.scale, attn_mask=attn_bias, dropout_p=dropout_p).transpose(1, 2).reshape(B, L, C)
@@ -186,7 +186,8 @@ class CrossAttention(nn.Module):
         v = self.v(context).reshape(B, -1, self.num_heads, self.head_dim)  # BLHc
         main_type = q.dtype
 
-        using_flash = self.using_flash and attn_bias is None and main_type != torch.float32
+        using_flash = self.using_flash and attn_bias is None and main_type != torch.float32 and next(self.parameters()).is_cuda
+        using_xform = self.using_xform and next(self.parameters()).is_cuda
         if not using_flash and not self.using_xform:
             q = q.permute(0, 2, 1, 3)
             k = k.permute(0, 2, 1, 3)
