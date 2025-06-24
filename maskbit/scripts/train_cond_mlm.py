@@ -144,7 +144,7 @@ def main():
     model_cls = CondBert
 
     mlm_model = model_cls(
-        **get_model_kwargs(config),
+        **get_model_kwargs(model_cls, config),
     )
     config.model.mlm_model.mask_token = mlm_model.mask_token
     logger.info(f"Masktoken: {config.model.mlm_model.mask_token}")
@@ -152,13 +152,13 @@ def main():
     # Create the EMA model
     if config.training.use_ema:
         ema_model = EMAModel(mlm_model.parameters(), decay=0.999, model_cls=model_cls,
-            **get_model_kwargs(config),
+            **get_model_kwargs(model_cls, config),
         )
 
         # Create custom saving and loading hooks so that `accelerator.save_state(...)` serializes in a nice format.
         def load_model_hook(models, input_dir):
             load_model = EMAModel.from_pretrained(os.path.join(input_dir, "ema_model"), model_cls=model_cls,
-                **get_model_kwargs(config),
+                **get_model_kwargs(model_cls, config),
             )
             ema_model.load_state_dict(load_model.state_dict())
             ema_model.to(accelerator.device)

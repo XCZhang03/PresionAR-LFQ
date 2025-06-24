@@ -2,6 +2,9 @@ from omegaconf import OmegaConf
 import os
 import glob
 
+from modeling.cond_bert import CondBert
+from modeling.bert import LFQBert
+
 
 
 def get_config():
@@ -22,27 +25,6 @@ def get_save_iteration(project_dir):
             return max(checkpoint_indices) + 1
     return 0
 
-def get_model_kwargs(config):
-    return dict(
-        stage=config.model.mlm_model.stage,
-        img_size=config.dataset.preprocessing.resolution,
-        token_size=config.model.vq_model.token_size,
-        variants=config.model.vq_model.variants[config.model.mlm_model.stage],
-        codebook_size=config.model.vq_model.codebook_size[config.model.mlm_model.stage],
-        hidden_dim=config.model.mlm_model.hidden_dim,
-        depth=config.model.mlm_model.depth,
-        heads=config.model.mlm_model.heads,
-        mlp_ratio=config.model.mlm_model.mlp_ratio,
-        codebook_splits=config.model.mlm_model.codebook_splits,
-        input_stride=2**(config.model.vq_model.num_resolutions - 1),
-        dropout=config.model.mlm_model.dropout,
-        drop_path=config.model.mlm_model.drop_path,
-        context_conditioning=config.model.mlm_model.context_conditioning,
-        label_conditioning=config.model.mlm_model.label_conditioning,
-        attn_l2_norm=config.model.mlm_model.attn_l2_norm,
-        tie_embeddings=config.model.mlm_model.get("tie_embeddings", False),
-        tie_context_pos_embeddings=config.model.mlm_model.get("tie_context_pos_embeddings", False),
-    )
 
 def get_conditional_sampling_kwargs(config):
     return dict(
@@ -61,3 +43,45 @@ def get_conditional_sampling_kwargs(config):
         bits=config.model.vq_model.token_size,
         variants=config.model.vq_model.variants[config.model.mlm_model.stage],
     )
+
+def get_model_kwargs(
+        model_cls,
+        config,
+):
+    if model_cls is CondBert:
+        model_kwargs = dict(
+            stage=config.model.mlm_model.stage,
+            img_size=config.dataset.preprocessing.resolution,
+            token_size=config.model.vq_model.token_size,
+            variants=config.model.vq_model.variants[config.model.mlm_model.stage],
+            codebook_size=config.model.vq_model.codebook_size[config.model.mlm_model.stage],
+            hidden_dim=config.model.mlm_model.hidden_dim,
+            depth=config.model.mlm_model.depth,
+            heads=config.model.mlm_model.heads,
+            mlp_ratio=config.model.mlm_model.mlp_ratio,
+            codebook_splits=config.model.mlm_model.codebook_splits,
+            input_stride=2**(config.model.vq_model.num_resolutions - 1),
+            dropout=config.model.mlm_model.dropout,
+            drop_path=config.model.mlm_model.drop_path,
+            context_conditioning=config.model.mlm_model.context_conditioning,
+            label_conditioning=config.model.mlm_model.label_conditioning,
+            attn_l2_norm=config.model.mlm_model.attn_l2_norm,
+            tie_embeddings=config.model.mlm_model.get("tie_embeddings", False),
+            tie_context_pos_embeddings=config.model.mlm_model.get("tie_context_pos_embeddings", False),
+        )
+    elif model_cls is LFQBert:
+        model_kwargs = dict(
+            img_size=config.dataset.preprocessing.resolution,
+            hidden_dim=config.model.mlm_model.hidden_dim,
+            codebook_size=config.model.vq_model.codebook_size,
+            codebook_splits=config.model.mlm_model.codebook_splits,
+            depth=config.model.mlm_model.depth,
+            heads=config.model.mlm_model.heads,
+            mlp_dim=config.model.mlm_model.mlp_dim,
+            dropout=config.model.mlm_model.dropout,
+            input_stride=2**(config.model.vq_model.num_resolutions - 1),
+            use_prenorm=config.model.mlm_model.use_prenorm,
+        )
+    else:
+        raise ValueError(f"Unsupported model class: {model_cls}")
+    return model_kwargs
