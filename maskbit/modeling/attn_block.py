@@ -117,6 +117,7 @@ class SelfAttention(nn.Module):
         # qkv: BL3Hc
         
         using_flash = self.using_flash and attn_bias is None and qkv.dtype != torch.float32
+        print(f'using_flash={self.using_flash}, using_xform={self.using_xform}, main_type={main_type}')
         if using_flash or self.using_xform: q, k, v = qkv.unbind(dim=2); dim_cat = 1   # q or k or v: BLHc
         else: q, k, v = qkv.permute(2, 0, 3, 1, 4).unbind(dim=0); dim_cat = 2               # q or k or v: BHLc
         
