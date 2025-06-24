@@ -343,6 +343,9 @@ def main():
     splits = config.model.mlm_model.codebook_splits
     bits = config.model.vq_model.token_size
     variants = config.model.vq_model.variants[config.model.mlm_model.stage]
+    if config.experiment.get('eval_every', None) is not None:
+        config.experiment.eval_loss_every = config.experiment.eval_every
+        config.experiment.eval_gen_every = config.experiment.eval_every
 
     batch_time_m = AverageMeter()
     data_time_m = AverageMeter()
