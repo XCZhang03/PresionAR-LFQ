@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-debug
-#SBATCH -p gpu_test
+#SBATCH --job-name=cond-gen-debug
+#SBATCH -p kempner_h100
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
 #SBATCH -o status/myoutput_%j.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
-#SBATCH --nodes=2                   # number of nodes
+#SBATCH --nodes=1                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=8           # number of CPU cores per task
 #SBATCH --gres=gpu:1                # number of GPUs per node
@@ -38,27 +38,34 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="2level-large_batch"
+RUN_NAME="test_attn"
+####################
+
+###################
+### Config file ###
+###################
+config_file=$ACCELERATE_DIR/configs/cond_gen/cond_generator_10bit_2lvl.yaml
+###################
+
+
+####################
+## Tokenizer ckpt ##
+####################
+vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-mixed_from_scratch-long/archive/checkpoint-800000/ema_model
 ####################
 
 srun bash -c "
     accelerate launch \
-    --multi_gpu \
-    --rdzv_backend c10d \
-    --num_processes $NUM_PROCESSES \
-    --num_machines $NNODES \
-    --main_process_ip $head_node_ip \
-    --main_process_port 29500 \
-    --machine_rank $SLURM_PROCID \
-    $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
-    config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_2lvl.yaml \
-    training.per_gpu_batch_size=8 \
+    $ACCELERATE_DIR/scripts/train_cond_mlm.py \
+    config=$config_file \
+    training.per_gpu_batch_size=32 \
     training.gradient_accumulation_steps=1 \
     experiment.save_every=100 \
     experiment.generate_every=100 \
-    experiment.eval_every=400 \
+    experiment.eval_every=200 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
+    experiment.vqgan_checkpoint=${vqgan_checkpoint} \
     "
 
 
