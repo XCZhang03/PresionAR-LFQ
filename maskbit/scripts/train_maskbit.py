@@ -13,6 +13,7 @@ import tqdm
 from accelerate.utils import DistributedType, set_seed
 from accelerate import Accelerator
 from accelerate.logging import get_logger
+from accelerate.utils.dataclasses import ProjectConfiguration
 
 from data import SimpleImagenet
 import torch
@@ -21,8 +22,10 @@ from torch.optim import AdamW
 from utils.lr_schedulers import get_scheduler
 from utils.logger import setup_logger
 from utils.meter import AverageMeter
+from utils.script_utils import get_model_kwargs, get_sampling_kwargs, get_config, get_save_iteration
 from modeling.modules import EMAModel, MLMLoss, get_mask_tokens, sample, combine_factorized_tokens, split_factorized_tokens
-from modeling.conv_vqgan import ConvVQModel
+# from modeling.conv_vqgan import ConvVQModel
+from modeling.rqgan import RQModel
 from modeling.bert import Bert, LFQBert
 from evaluator import GeneratorEvaluator
 
@@ -31,20 +34,13 @@ from utils.viz_utils import make_viz_reconstructed_stage_two, make_viz_generated
 from torchinfo import summary
 
 
-def get_config():
-    cli_conf = OmegaConf.from_cli()
-
-    yaml_conf = OmegaConf.load(cli_conf.config)
-    conf = OmegaConf.merge(yaml_conf, cli_conf)
-
-    return conf
 
 
 def main():
     #########################
     # SETUP Accelerator     #
     #########################
-    ckpt_dir = os.environ.get('WORKSPACE', './runs')
+    work_dir = os.environ.get('WORKSPACE', './runs')
 
     config = get_config()
 
@@ -54,20 +50,31 @@ def main():
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = False
 
-    output_dir = os.path.join(ckpt_dir, "outputs", config.experiment.name)
+    output_dir = os.path.join(work_dir, "outputs", config.experiment.name, config.experiment.run_name)
+    # if config.experiment.resume:
+    #     ## remember to change the dir after all training
+    #     output_dir = os.path.join(work_dir, "outputs", config.experiment.name, f"{config.model.vq_model.num_quantizers}level", "current")   # do not set time if experiment may be resumed
+    # else:
+    #     output_dir = os.path.join(work_dir, "outputs", config.experiment.name, f"{config.model.vq_model.num_quantizers}level", cur_time)
     config.experiment.logging_dir = str(Path(output_dir) / "logs")
 
     if config.experiment.logger not in ("wandb", "tensorboard"):
         raise ValueError(f"{config.experiment.logger} is not supported. Please choose `wandb` or `tensorboard`.")
 
+    project_config = ProjectConfiguration(
+        project_dir=output_dir,
+        automatic_checkpoint_naming=True,
+        total_limit=2,
+        iteration=get_save_iteration(output_dir),
+    )
+
     accelerator = Accelerator(
         gradient_accumulation_steps=config.training.gradient_accumulation_steps,
         mixed_precision=config.training.mixed_precision,
         log_with=config.experiment.logger,
-        project_dir=config.experiment.logging_dir,
         split_batches=False,
+        project_config=project_config,
     )
-
     if accelerator.distributed_type == DistributedType.DEEPSPEED:
         accelerator.state.deepspeed_plugin.deepspeed_config["train_micro_batch_size_per_gpu"] = (
             config.training.per_gpu_batch_size
@@ -84,7 +91,35 @@ def main():
     # We need to initialize the trackers we use, and also store our configuration.
     # The trackers initializes automatically on the main process.
     if accelerator.is_main_process:
-        accelerator.init_trackers(config.experiment.name)
+        #### save the run_id for resume
+        if config.experiment.logger == "wandb":
+            import uuid
+            run_id_file = os.path.join(output_dir, "wandb_run_id.txt")
+            if os.path.exists(run_id_file):
+                with open(run_id_file, "r") as f:
+                    run_id = f.read().strip()
+            else:
+                run_id = str(uuid.uuid4())
+                with open(run_id_file, "w") as f:
+                    f.write(run_id)
+            
+            accelerator.init_trackers(
+                project_name=config.experiment.name,
+                config=OmegaConf.to_container(config, resolve=True),  # Convert OmegaConf to a dictionary
+                init_kwargs={
+                    "wandb": {
+                        "id": run_id,
+                        "resume": "allow",
+                        "name": config.experiment.run_name,
+                    }
+                }
+                )
+        elif config.experiment.logger == "tensorboard":
+            accelerator.init_trackers(
+                project_name=config.experiment.name,
+                # config=OmegaConf.to_container(config, resolve=True),  # Convert OmegaConf to a dictionary
+            )
+        
         config_path = Path(output_dir) / "config.yaml"
         logger.info(f"Saving config to {config_path}")
         OmegaConf.save(config, config_path)
@@ -101,17 +136,19 @@ def main():
     #########################
     logger.info("Creating model and optimizer")
 
-    vqgan_model = ConvVQModel(config.model.vq_model, legacy=False)
+    vqgan_model = RQModel(config.model.vq_model, legacy=False)
     vqgan_model.load_pretrained(config.experiment.vqgan_checkpoint)
     vqgan_model.eval()
+    config.model.vq_model.codebook_size = vqgan_model.codebook_size[0]
 
-    if config.model.vq_model.quantizer_type == "lookup-free":
-        num_codebook_entries = 2 ** config.model.vq_model.token_size
-        config.model.vq_model.codebook_size = num_codebook_entries
-        config.model.mlm_model.mask_token = int(2 ** (math.log2(num_codebook_entries) // config.model.mlm_model.codebook_splits))
-    else:
-        num_codebook_entries = config.model.vq_model.codebook_size
-        config.model.mlm_model.mask_token = int(2 ** (math.log2(num_codebook_entries) // config.model.mlm_model.codebook_splits))
+    # if config.model.vq_model.quantizer_type == "lookup-free":
+    #     num_codebook_entries = 2 ** config.model.vq_model.token_size
+    #     config.model.vq_model.codebook_size = num_codebook_entries
+    #     config.model.mlm_model.mask_token = int(2 ** (math.log2(num_codebook_entries) // config.model.mlm_model.codebook_splits))
+    # else:
+    #     num_codebook_entries = config.model.vq_model.codebook_size
+    #     config.model.mlm_model.mask_token = int(2 ** (math.log2(num_codebook_entries) // config.model.mlm_model.codebook_splits))
+    config.model.mlm_model.mask_token = int(config.model.vq_model.variants[0] ** (config.model.vq_model.token_size // config.model.mlm_model.codebook_splits))
     logger.info(f"Masktoken: {config.model.mlm_model.mask_token}")
 
     model_cls = {
@@ -302,10 +339,10 @@ def main():
 
     if config.experiment.resume:
         accelerator.wait_for_everyone()
-        local_ckpt_list = list(glob.glob(os.path.join(output_dir, "checkpoint*")))
+        local_ckpt_list = list(glob.glob(os.path.join(output_dir, "checkpoints", "checkpoint*")))
         if len(local_ckpt_list) >= 1:
             if len(local_ckpt_list) > 1:
-                fn = lambda x: int(x.split('/')[-1].split('-')[-1])
+                fn = lambda x: int(x.split('/')[-1].split('_')[-1])
                 checkpoint_paths = sorted(local_ckpt_list, key=fn, reverse=True)
             else:  # len(local_ckpt_list) == 1
                 checkpoint_paths = local_ckpt_list
@@ -361,7 +398,7 @@ def main():
             )
             with torch.no_grad():
                 _, encoder_dict = vqgan_model.encode(images)
-                input_tokens = encoder_dict["min_encoding_indices"]
+                input_tokens = encoder_dict["min_encoding_indices"][0]
                 input_tokens = input_tokens.reshape(input_tokens.shape[0], -1)
             fnames = batch["__key__"]
             data_time_m.update(time.time() - end)
@@ -626,8 +663,8 @@ def reconstructed_and_predicted_images(
     tokens = combine_factorized_tokens(tokens, codebook_size, codebook_splits)
     predicted_tokens = combine_factorized_tokens(predicted_tokens, codebook_size, codebook_splits)
 
-    reconstructed = vqgan_model.decode_tokens(tokens)
-    predicted = vqgan_model.decode_tokens(predicted_tokens)
+    reconstructed = vqgan_model.decode_tokens(tokens, num_level=0)
+    predicted = vqgan_model.decode_tokens(predicted_tokens, num_level=0)
 
     images_wandb, images_tensorboard = make_viz_reconstructed_stage_two(
         reconstructed, predicted
@@ -705,27 +742,13 @@ def generate_images(
     images_wandb.save(path)
 
 
-def save_checkpoint(
-    model: torch.nn.Module,
-    output_dir: Text,
-    accelerator,
-    global_step: int,
-) -> Path:
-    """Save a checkpoint of the model.
-    This function saves a checkpoint of the model to the output directory.
-    Args:
-        - model -> torch.nn.Module: The model to save.
-        - output_dir -> Text: The output directory.
-        - accelerator: The accelerator object.
-        - global_step -> int: The current training step. This is used to create the output directory.
-    Returns:
-        Path: The path to the saved checkpoint.
-    """
+def save_checkpoint(model, output_dir, accelerator, global_step) -> Path:
     save_path = Path(output_dir) / f"checkpoint-{global_step}"
     logger = get_logger(name="MaskBit", log_level="INFO")
 
+    # retrieve the model on all processes for deepspeed stage 3 to work then save on one process (we are not using stage 3 yet)
     state_dict = accelerator.get_state_dict(model)
-
+    save_path = accelerator.save_state(save_path)
     if accelerator.is_main_process:
         unwrapped_model = accelerator.unwrap_model(model)
         unwrapped_model.save_pretrained(
@@ -736,7 +759,14 @@ def save_checkpoint(
         json.dump({"global_step": global_step}, (save_path / "metadata.json").open("w+"))
         logger.info(f"Saved state to {save_path}")
 
-    accelerator.save_state(save_path)
+        if global_step % 100_000 == 0:
+            os.makedirs(f"{output_dir}/archive", exist_ok=True)
+            import shutil
+            shutil.copytree(save_path, f"{output_dir}/archive/checkpoint-{global_step}", dirs_exist_ok=True)
+            print(f"Checkpoint {global_step} archived.")
+
+    
+
     return save_path
 
 
