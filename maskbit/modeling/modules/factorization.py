@@ -32,7 +32,7 @@ def combine_factorized_tokens(tokens: torch.Tensor, codebook_size: int=None, spl
     Returns:
         combined_tokens -> torch.Tensor: Tensor of shape (batch_size, n).
     """
-    combined_tokens = torch.zeros((tokens.shape[0], tokens.shape[1]), device=tokens.device)
+    combined_tokens = torch.zeros((tokens.shape[0], tokens.shape[1]), device=tokens.device, dtype=torch.long)
     codebook_size, bits, variants = get_codebook_config(codebook_size, bits, variants)
     bit_shift = bits // splits 
     for i in range(splits):
