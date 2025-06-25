@@ -52,7 +52,7 @@ class ResAR(BaseModel):
             model = CondBert(**get_model_kwargs(config=self.configs[i]))
             self.cond_models.append(model)
             self.configs[i].model.mlm_model.mask_token = model.mask_token
-        
+
         if self.cur_stage is not None:
             self.set_stage(self.cur_stage)
         
@@ -77,15 +77,19 @@ class ResAR(BaseModel):
 
     @property
     def _cur_model(self):
-        if self.cur_stage == 0:
-            return self.base_model
-        else:
-            return self.cond_models[self.cur_stage - 1]
+        return self.get_stage_model(self.cur_stage) if self.cur_stage is not None else None
         
     @property
     def _cur_config(self):
         return self.configs[self.cur_stage] if self.cur_stage is not None else None
     
+    def get_stage_model(self, stage: int):
+        assert 0 <= stage < self.num_stages, f"Stage must be between 0 and {self.num_stages - 1}, but got {stage}."
+        if stage == 0:
+            return self.base_model
+        else:
+            return self.cond_models[stage - 1]
+
     def forward(self, *args, **kwargs):
         return self._cur_model(*args, **kwargs)
 

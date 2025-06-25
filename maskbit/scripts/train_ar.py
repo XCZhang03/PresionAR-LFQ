@@ -143,18 +143,50 @@ def main():
     ar_model = ResAR(config)
     model_cls = ResAR
     cur_config = ar_model._cur_config
+    
     cur_config.model.mlm_model.mask_token = ar_model._cur_model.mask_token
     stage = cur_config.model.mlm_model.stage
     codebook_size = cur_config.model.vq_model.codebook_size[stage]
     splits = cur_config.model.mlm_model.codebook_splits
     bits = cur_config.model.vq_model.token_size
     variants = cur_config.model.vq_model.variants[stage]
+
+    # Print Model:
+    vqgan_summary_str = summary(
+        vqgan_model,
+        input_size=(1,3,256,256),
+        depth=5,
+        col_width=15,
+        col_names=("input_size", "output_size", "num_params", "params_percent", "kernel_size", "mult_adds"),
+        verbose=0
+    )
+    patch_size = int(config.dataset.preprocessing.resolution // (2**(config.model.vq_model.num_resolutions - 1)))
+    mlm_summary_str = summary(
+        ar_model,
+        input_data=[torch.randint(0, cur_config.model.mlm_model.mask_token, (1, patch_size * patch_size, cur_config.model.mlm_model.codebook_splits)), torch.randn(1, config.model.vq_model.token_size, patch_size, patch_size), torch.ones(1, dtype=int)],
+        depth=7,
+        col_width=15,
+        col_names=("input_size", "output_size", "num_params", "params_percent",),
+        verbose=0
+    )
+    logger.info(vqgan_summary_str)
+    logger.info(mlm_summary_str)
     
     if accelerator.is_local_main_process:
         logger.info(f"Current config:\n{OmegaConf.to_yaml(cur_config)}", main_process_only=False)
     logger.info(f"Masktoken: {cur_config.model.mlm_model.mask_token}")
     logger.info(f"Training mlm model with stage {stage} in {ar_model.num_stages} stages.")
     
+    if config.experiment.get('init_checkpoint', None) is not None:
+        ar_model.load_pretrained(config.experiment.init_checkpoint)
+        logger.info(f"Loaded initial checkpoint from: {config.experiment.init_checkpoint}")
+
+    for i in range(ar_model.num_stages):
+        model_path = config.model.ar_model.get(f'stage_{i}_model_checkpoint', None)
+        if model_path is not None:
+            ar_model.get_stage_model(i).load_pretrained(model_path)
+            logger.info(f"Loaded stage {i} model from: {model_path}")
+
     # Create the EMA model
     if config.training.use_ema:
         ema_model = EMAModel(ar_model.parameters(), decay=0.999, model_cls=model_cls,
@@ -179,27 +211,6 @@ def main():
 
     loss_config = config.losses.mlm
     loss_module = MLMLoss(loss_config.label_smoothing, loss_config.sum_splits)
-
-    # Print Model:
-    vqgan_summary_str = summary(
-        vqgan_model,
-        input_size=(1,3,256,256),
-        depth=5,
-        col_width=15,
-        col_names=("input_size", "output_size", "num_params", "params_percent", "kernel_size", "mult_adds"),
-        verbose=0
-    )
-    patch_size = int(config.dataset.preprocessing.resolution // (2**(config.model.vq_model.num_resolutions - 1)))
-    mlm_summary_str = summary(
-        ar_model,
-        input_data=[torch.randint(0, cur_config.model.mlm_model.mask_token, (1, patch_size * patch_size, cur_config.model.mlm_model.codebook_splits)), torch.randn(1, config.model.vq_model.token_size, patch_size, patch_size), torch.ones(1, dtype=int)],
-        depth=7,
-        col_width=15,
-        col_names=("input_size", "output_size", "num_params", "params_percent",),
-        verbose=0
-    )
-    logger.info(vqgan_summary_str)
-    logger.info(mlm_summary_str)
 
     optimizer_config = config.optimizer.params
     learning_rate = optimizer_config.learning_rate
