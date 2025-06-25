@@ -2,9 +2,6 @@ from omegaconf import OmegaConf
 import os
 import glob
 
-from modeling.cond_bert import CondBert
-from modeling.bert import LFQBert
-
 
 
 def get_config():
@@ -13,6 +10,13 @@ def get_config():
     yaml_conf = OmegaConf.load(cli_conf.config)
     conf = OmegaConf.merge(yaml_conf, cli_conf)
 
+    ## overrides
+    if conf.experiment.get('eval_every', None) is not None:
+        conf.experiment.eval_loss_every = conf.experiment.eval_every
+        conf.experiment.eval_gen_every = conf.experiment.eval_every
+    if conf.model.vq_model.get("codebook_size", None) is None:
+        conf.model.vq_model.codebook_size = [conf.model.vq_model.token_size ** variants for variants in conf.model.vq_model.variants]
+    
     return conf
 
 def get_save_iteration(project_dir):
@@ -26,29 +30,48 @@ def get_save_iteration(project_dir):
     return 0
 
 
-def get_conditional_sampling_kwargs(config):
-    return dict(
-        softmax_temperature=config.model.mlm_model.softmax_temperature,
-        randomize_temperature=config.model.mlm_model.randomize_temperature,
-        mask_schedule_strategy=config.model.mlm_model.gen_mask_schedule_strategy,
-        num_steps=config.model.mlm_model.num_steps,
-        guidance_scale=config.model.mlm_model.guidance_scale,
-        mask_token=config.model.mlm_model.mask_token,
-        patch_size=int(config.dataset.preprocessing.resolution // (2**(config.model.vq_model.num_resolutions - 1))),
-        guidance_annealing=config.model.mlm_model.guidance_annealing,
-        scale_pow=config.model.mlm_model.get("scale_pow", 4.0),
-        use_sampling_annealing=config.model.mlm_model.get("use_sampling_annealing", False),
-        codebook_splits=config.model.mlm_model.codebook_splits,
-        codebook_size=config.model.vq_model.codebook_size[config.model.mlm_model.stage],
-        bits=config.model.vq_model.token_size,
-        variants=config.model.vq_model.variants[config.model.mlm_model.stage],
-    )
+def get_sampling_kwargs(config):
+    model_cls_name = config.model.mlm_model.get("model_cls", None)
+    if model_cls_name == "cond_bert":
+        sampling_kwargs = dict(
+            stage=config.model.mlm_model.stage,
+            softmax_temperature=config.model.mlm_model.softmax_temperature,
+            randomize_temperature=config.model.mlm_model.randomize_temperature,
+            mask_schedule_strategy=config.model.mlm_model.gen_mask_schedule_strategy,
+            num_steps=config.model.mlm_model.num_steps,
+            guidance_scale=config.model.mlm_model.guidance_scale,
+            mask_token=config.model.mlm_model.mask_token,
+            patch_size=int(config.dataset.preprocessing.resolution // (2**(config.model.vq_model.num_resolutions - 1))),
+            guidance_annealing=config.model.mlm_model.guidance_annealing,
+            scale_pow=config.model.mlm_model.get("scale_pow", 4.0),
+            use_sampling_annealing=config.model.mlm_model.get("use_sampling_annealing", False),
+            codebook_splits=config.model.mlm_model.codebook_splits,
+            codebook_size=config.model.vq_model.codebook_size[config.model.mlm_model.stage],
+            bits=config.model.vq_model.token_size,
+            variants=config.model.vq_model.variants[config.model.mlm_model.stage],
+        )
+    elif model_cls_name == "lfq_bert":
+        sampling_kwargs = dict(
+            softmax_temperature=config.model.mlm_model.softmax_temperature,
+            randomize_temperature=config.model.mlm_model.randomize_temperature,
+            mask_schedule_strategy=config.model.mlm_model.gen_mask_schedule_strategy,
+            num_steps=config.model.mlm_model.num_steps,
+            guidance_scale=config.model.mlm_model.guidance_scale,
+            mask_token=config.model.mlm_model.mask_token,
+            patch_size = int(config.dataset.preprocessing.resolution // (2**(config.model.vq_model.num_resolutions - 1))),
+            guidance_annealing=config.model.mlm_model.guidance_annealing,
+            scale_pow=config.model.mlm_model.get("scale_pow", 4.0),
+            use_sampling_annealing=config.model.mlm_model.get("use_sampling_annealing", False),
+            codebook_size=config.model.vq_model.codebook_size[0],
+            codebook_splits=config.model.mlm_model.codebook_splits,
+        )
+    else:
+        raise ValueError(f"Unsupported model class: {model_cls_name}")
+    return sampling_kwargs
 
-def get_model_kwargs(
-        model_cls,
-        config,
-):
-    if model_cls is CondBert:
+def get_model_kwargs(config):
+    model_cls_name = config.model.mlm_model.get("model_cls", None)
+    if model_cls_name == "cond_bert":
         model_kwargs = dict(
             stage=config.model.mlm_model.stage,
             img_size=config.dataset.preprocessing.resolution,
@@ -69,11 +92,11 @@ def get_model_kwargs(
             tie_embeddings=config.model.mlm_model.get("tie_embeddings", False),
             tie_context_pos_embeddings=config.model.mlm_model.get("tie_context_pos_embeddings", False),
         )
-    elif model_cls is LFQBert:
+    elif model_cls_name == "lfq_bert":
         model_kwargs = dict(
             img_size=config.dataset.preprocessing.resolution,
             hidden_dim=config.model.mlm_model.hidden_dim,
-            codebook_size=config.model.vq_model.codebook_size,
+            codebook_size=config.model.vq_model.codebook_size[0],
             codebook_splits=config.model.mlm_model.codebook_splits,
             depth=config.model.mlm_model.depth,
             heads=config.model.mlm_model.heads,
@@ -83,5 +106,5 @@ def get_model_kwargs(
             use_prenorm=config.model.mlm_model.use_prenorm,
         )
     else:
-        raise ValueError(f"Unsupported model class: {model_cls}")
+        raise ValueError(f"Unsupported model class: {model_cls_name}")
     return model_kwargs

@@ -162,6 +162,7 @@ class CondBert(BaseModel):
         token_indices = token_indices.view(b, -1, splits)  # [B, L, G]
 
         from einops import rearrange
+        context = context.clone()
         context = rearrange(context, 'b c h w -> b (h w) c').contiguous()  # [B, L, C]
        
         cls_token = class_labels.view(b, -1)
