@@ -22,15 +22,13 @@ from torch.optim import AdamW
 from utils.lr_schedulers import get_scheduler
 from utils.logger import setup_logger
 from utils.meter import AverageMeter
-from modeling.modules import EMAModel, MLMLoss, get_mask_tokens, conditional_sample, combine_factorized_tokens, split_factorized_tokens
-# from modeling.conv_vqgan import ConvVQModel
+from modeling.modules import EMAModel, MLMLoss, get_mask_tokens, residual_sample, combine_factorized_tokens, split_factorized_tokens
 from modeling.rqgan import RQModel
-# from modeling.bert import Bert, LFQBert
-from modeling.cond_bert import CondBert 
+from modeling.ar import ResAR
 from evaluator import GeneratorEvaluator
 
 from utils.viz_utils import make_viz_reconstructed_stage_two, make_viz_generated_stage_two
-from utils.script_utils import get_config, get_model_kwargs, get_sampling_kwargs, get_save_iteration
+from utils.script_utils import get_config, get_save_iteration
 from torchinfo import summary
 
 
@@ -86,7 +84,7 @@ def main():
     if accelerator.is_local_main_process:
         os.makedirs(output_dir, exist_ok=True)
 
-    logger = setup_logger(name="CondGen", log_level="INFO", output_dir=config.experiment.logging_dir)
+    logger = setup_logger(name="ResAR", log_level="INFO", output_dir=config.experiment.logging_dir)
 
     # We need to initialize the trackers we use, and also store our configuration.
     # The trackers initializes automatically on the main process.
@@ -141,23 +139,32 @@ def main():
     vqgan_model.load_pretrained(config.experiment.vqgan_checkpoint)
     vqgan_model.eval()
 
-    model_cls = CondBert
-    mlm_model = model_cls(
-        **get_model_kwargs(config),
-    )
-    config.model.mlm_model.mask_token = mlm_model.mask_token
-    logger.info(f"Masktoken: {config.model.mlm_model.mask_token}")
-
+    
+    ar_model = ResAR(config)
+    model_cls = ResAR
+    cur_config = ar_model._cur_config
+    cur_config.model.mlm_model.mask_token = ar_model._cur_model.mask_token
+    stage = cur_config.model.mlm_model.stage
+    codebook_size = cur_config.model.vq_model.codebook_size[stage]
+    splits = cur_config.model.mlm_model.codebook_splits
+    bits = cur_config.model.vq_model.token_size
+    variants = cur_config.model.vq_model.variants[stage]
+    
+    if accelerator.is_local_main_process:
+        logger.info(f"Current config:\n{OmegaConf.to_yaml(cur_config)}", main_process_only=False)
+    logger.info(f"Masktoken: {cur_config.model.mlm_model.mask_token}")
+    logger.info(f"Training mlm model with stage {stage} in {ar_model.num_stages} stages.")
+    
     # Create the EMA model
     if config.training.use_ema:
-        ema_model = EMAModel(mlm_model.parameters(), decay=0.999, model_cls=model_cls,
-            **get_model_kwargs(config),
+        ema_model = EMAModel(ar_model.parameters(), decay=0.999, model_cls=model_cls,
+            config=config,
         )
 
         # Create custom saving and loading hooks so that `accelerator.save_state(...)` serializes in a nice format.
         def load_model_hook(models, input_dir):
             load_model = EMAModel.from_pretrained(os.path.join(input_dir, "ema_model"), model_cls=model_cls,
-                **get_model_kwargs(config),
+                config=config,
             )
             ema_model.load_state_dict(load_model.state_dict())
             ema_model.to(accelerator.device)
@@ -184,8 +191,8 @@ def main():
     )
     patch_size = int(config.dataset.preprocessing.resolution // (2**(config.model.vq_model.num_resolutions - 1)))
     mlm_summary_str = summary(
-        mlm_model,
-        input_data=[torch.randint(0, config.model.mlm_model.mask_token, (1, patch_size * patch_size, config.model.mlm_model.codebook_splits)), torch.randn(1, config.model.vq_model.token_size, patch_size, patch_size), torch.ones(1, dtype=int)],
+        ar_model,
+        input_data=[torch.randint(0, cur_config.model.mlm_model.mask_token, (1, patch_size * patch_size, cur_config.model.mlm_model.codebook_splits)), torch.randn(1, config.model.vq_model.token_size, patch_size, patch_size), torch.ones(1, dtype=int)],
         depth=7,
         col_width=15,
         col_names=("input_size", "output_size", "num_params", "params_percent",),
@@ -204,7 +211,7 @@ def main():
         raise ValueError(f"Optimizer {optimizer_type} not supported")
 
     optimizer = optimizer_cls(
-        list(mlm_model.parameters()),
+        list(ar_model.parameters()),
         lr=learning_rate,
         betas=(optimizer_config.beta1, optimizer_config.beta2),
         weight_decay=optimizer_config.weight_decay,
@@ -267,8 +274,8 @@ def main():
     
     # Prepare everything with accelerator
     logger.info("Preparing model, optimizer and dataloaders")
-    mlm_model, optimizer, lr_scheduler = accelerator.prepare(
-        mlm_model, optimizer, lr_scheduler)
+    ar_model, optimizer, lr_scheduler = accelerator.prepare(
+        ar_model, optimizer, lr_scheduler)
 
     if config.training.use_ema:
         ema_model.to(accelerator.device)
@@ -338,13 +345,6 @@ def main():
         elif len(local_ckpt_list) > 1:
             raise ValueError("There should only be one checkpoint folder.")
 
-    codebook_size = config.model.vq_model.codebook_size[config.model.mlm_model.stage]
-    splits = config.model.mlm_model.codebook_splits
-    bits = config.model.vq_model.token_size
-    variants = config.model.vq_model.variants[config.model.mlm_model.stage]
-    if config.experiment.get('eval_every', None) is not None:
-        config.experiment.eval_loss_every = config.experiment.eval_every
-        config.experiment.eval_gen_every = config.experiment.eval_every
 
     batch_time_m = AverageMeter()
     data_time_m = AverageMeter()
@@ -356,7 +356,7 @@ def main():
     # As stated above, we are not doing epoch based training here, but just using this for book keeping and being able to
     # reuse the same training loop with other datasets/loaders.
     for current_epoch in range(first_epoch, num_train_epochs):
-        mlm_model.train()
+        ar_model.train()
         accelerator.print(f"Epoch {current_epoch}/{num_train_epochs-1} started.")
         for batch in train_dataloader:
             images = batch["image"].to(
@@ -366,24 +366,24 @@ def main():
                 accelerator.device, memory_format=torch.contiguous_format, non_blocking=True
             )
             with torch.no_grad():
-                context, encoder_dict = vqgan_model.encode(images, num_levels=config.model.mlm_model.stage)
-                input_tokens = encoder_dict["min_encoding_indices"][config.model.mlm_model.stage]
+                context, encoder_dict = vqgan_model.encode(images, num_levels=cur_config.model.mlm_model.stage)
+                input_tokens = encoder_dict["min_encoding_indices"][cur_config.model.mlm_model.stage]
                 input_tokens = input_tokens.reshape(input_tokens.shape[0], -1)
             fnames = batch["__key__"]
             data_time_m.update(time.time() - end)
 
-            with accelerator.accumulate([mlm_model]):
+            with accelerator.accumulate([ar_model]):
                 input_tokens = split_factorized_tokens(input_tokens, codebook_size=codebook_size, splits=splits, bits=bits, variants=variants)
 
                 masked_tokens, masks = get_mask_tokens(
                     input_tokens,
-                    config.model.mlm_model.mask_token,
-                    mode=config.model.mlm_model.train_mask_schedule_strategy
+                    cur_config.model.mlm_model.mask_token,
+                    mode=cur_config.model.mlm_model.train_mask_schedule_strategy
                 )
 
                 # forward
-                drop_label_mask = torch.rand_like(class_tokens, dtype=torch.float) < config.model.mlm_model.class_label_dropout
-                logits = mlm_model(masked_tokens, context, class_tokens, drop_label_mask)
+                drop_label_mask = torch.rand_like(class_tokens, dtype=torch.float) < cur_config.model.mlm_model.class_label_dropout
+                logits = ar_model(masked_tokens, context, class_tokens, drop_label_mask)
                 maskgit_loss, loss_dict = loss_module(logits, input_tokens, masks)
 
                 # Gather the losses across all processes for logging (if we use distributed training).
@@ -394,7 +394,7 @@ def main():
                 accelerator.backward(maskgit_loss)
 
                 if config.training.max_grad_norm is not None and accelerator.sync_gradients:
-                    accelerator.clip_grad_norm_(mlm_model.parameters(), config.training.max_grad_norm)
+                    accelerator.clip_grad_norm_(ar_model.parameters(), config.training.max_grad_norm)
 
                 optimizer.step()
                 lr_scheduler.step()
@@ -405,7 +405,7 @@ def main():
                     and (global_step + 1) % config.experiment.log_grad_norm_every == 0
                     and accelerator.is_main_process
                 ):
-                    log_grad_norm(mlm_model, accelerator, global_step + 1)
+                    log_grad_norm(ar_model, accelerator, global_step + 1)
 
                 optimizer.zero_grad(set_to_none=True)
 
@@ -415,7 +415,7 @@ def main():
             # Checks if the accelerator has performed an optimization step behind the scenes
             if accelerator.sync_gradients:
                 if config.training.use_ema:
-                    ema_model.step(mlm_model.parameters())
+                    ema_model.step(ar_model.parameters())
 
                 # wait for both generator and discriminator to settle
                 batch_time_m.update(time.time() - end)
@@ -452,7 +452,7 @@ def main():
 
                 # Save model checkpoint
                 if (global_step + 1) % config.experiment.save_every == 0:
-                    save_checkpoint(mlm_model, output_dir, accelerator, global_step + 1)
+                    save_checkpoint(ar_model, output_dir, accelerator, global_step + 1)
 
                     # Wait for everyone to save their checkpoint
                     accelerator.wait_for_everyone()
@@ -461,17 +461,16 @@ def main():
                 if (global_step + 1) % config.experiment.generate_every == 0 and accelerator.is_main_process:
                     # Store the model parameters temporarily and load the EMA parameters to perform inference.
                     if config.training.get("use_ema", False):
-                        ema_model.store(mlm_model.parameters())
-                        ema_model.copy_to(mlm_model.parameters())
+                        ema_model.store(ar_model.parameters())
+                        ema_model.copy_to(ar_model.parameters())
 
                     context = context[:config.training.num_generated_images]
                     class_tokens = class_tokens[:config.training.num_generated_images]
 
                     # Generate images
                     generate_images(
-                        mlm_model,
+                        ar_model,
                         vqgan_model,
-                        context,
                         class_tokens,
                         config,
                         accelerator,
@@ -483,7 +482,7 @@ def main():
                     predicted_tokens = torch.argmax(logits, -1).view(input_tokens.shape)
                     reconstructed_and_predicted_images(
                         vqgan_model,
-                        config,
+                        cur_config,
                         context,
                         input_tokens[:config.training.num_generated_images],
                         predicted_tokens[:config.training.num_generated_images],
@@ -493,22 +492,22 @@ def main():
 
                     if config.training.get("use_ema", False):
                         # Switch back to the original model parameters for training.
-                        ema_model.restore(mlm_model.parameters())
+                        ema_model.restore(ar_model.parameters())
                 
                 if (global_step + 1) % config.experiment.eval_loss_every == 0:
                     # or all val images.
                     logger.info(f"Computing losses on the validation set.")
 
                     if config.training.get("use_ema", False):
-                        ema_model.store(mlm_model.parameters())
-                        ema_model.copy_to(mlm_model.parameters())
+                        ema_model.store(ar_model.parameters())
+                        ema_model.copy_to(ar_model.parameters())
                     
                     eval_loss_scores = eval_loss(
-                        mlm_model,
+                        ar_model,
                         vqgan_model,
                         eval_dataloader,
                         loss_module,
-                        config,
+                        cur_config,
                     )
                     logger.info(f"EVALUATION Step: {global_step + 1}")
                     logger.info(pprint.pformat(eval_loss_scores))
@@ -518,7 +517,7 @@ def main():
 
                     if config.training.get("use_ema", False):
                         # Switch back to the original model parameters for training.
-                        ema_model.restore(mlm_model.parameters())
+                        ema_model.restore(ar_model.parameters())
                     accelerator.wait_for_everyone()
 
                 # Evaluate reconstruction
@@ -527,11 +526,11 @@ def main():
                     logger.info(f"Computing metrics on the validation set.")
 
                     if config.training.get("use_ema", False):
-                        ema_model.store(mlm_model.parameters())
-                        ema_model.copy_to(mlm_model.parameters())
+                        ema_model.store(ar_model.parameters())
+                        ema_model.copy_to(ar_model.parameters())
 
                     eval_scores = eval_generation(
-                        mlm_model,
+                        ar_model,
                         vqgan_model,
                         eval_dataloader,
                         evaluator,
@@ -546,7 +545,7 @@ def main():
 
                     if config.training.get("use_ema", False):
                         # Switch back to the original model parameters for training.
-                        ema_model.restore(mlm_model.parameters())
+                        ema_model.restore(ar_model.parameters())
                     accelerator.wait_for_everyone()
                     last_eval_at_step = global_step
 
@@ -563,16 +562,16 @@ def main():
     accelerator.wait_for_everyone()
 
     # Evaluate and save checkpoint at the end of training
-    save_checkpoint(mlm_model, output_dir, accelerator, global_step)
+    save_checkpoint(ar_model, output_dir, accelerator, global_step)
     if global_step - last_eval_at_step > 1000:
         logger.info(f"Computing metrics on the validation set.")
 
         if config.training.get("use_ema", False):
-            ema_model.store(mlm_model.parameters())
-            ema_model.copy_to(mlm_model.parameters())
+            ema_model.store(ar_model.parameters())
+            ema_model.copy_to(ar_model.parameters())
 
         eval_scores = eval_generation(
-            mlm_model,
+            ar_model,
             vqgan_model,
             eval_dataloader,
             evaluator,
@@ -591,23 +590,23 @@ def main():
 
 @torch.no_grad()
 def eval_loss(
-        mlm_model,
+        ar_model,
         vqgan_model,
         eval_loader,
         loss_module,
         config,
 ):
-    mlm_model.eval()
+    ar_model.eval()
     loss_average_m = AverageMeter()
     accuracy_m = AverageMeter()
     masked_accuracy_m = AverageMeter()
 
     for batch in tqdm.tqdm(eval_loader):
         images = batch["image"].to(
-                mlm_model.device, memory_format=torch.contiguous_format, non_blocking=True
+                ar_model.device, memory_format=torch.contiguous_format, non_blocking=True
             )
         class_tokens = batch["class_id"].to(
-                mlm_model.device, memory_format=torch.contiguous_format, non_blocking=True
+                ar_model.device, memory_format=torch.contiguous_format, non_blocking=True
             )
         num_samples = class_tokens.shape[0]
         context, encoder_dict = vqgan_model.encode(images, num_levels=config.model.mlm_model.stage)
@@ -623,7 +622,7 @@ def eval_loss(
 
         # forward
         drop_label_mask = torch.rand_like(class_tokens, dtype=torch.float) < config.model.mlm_model.class_label_dropout
-        logits = mlm_model(masked_tokens, context, class_tokens, drop_label_mask)
+        logits = ar_model(masked_tokens, context, class_tokens, drop_label_mask)
         maskgit_loss, loss_dict = loss_module(logits, input_tokens, masks)
 
         loss_average_m.update(loss_dict['mlm_loss'].item())
@@ -639,31 +638,27 @@ def eval_loss(
 
 @torch.no_grad()
 def eval_generation(
-    mlm_model,
+    ar_model,
     vqgan_model,
     eval_loader,
     evaluator,
     config,
 ):
-    mlm_model.eval()
+    ar_model.eval()
     evaluator.reset_metrics()
 
     for batch in tqdm.tqdm(eval_loader):
         images = batch["image"].to(
-                mlm_model.device, memory_format=torch.contiguous_format, non_blocking=True
+                ar_model.device, memory_format=torch.contiguous_format, non_blocking=True
             )
         class_tokens = batch["class_id"].to(
-                mlm_model.device, memory_format=torch.contiguous_format, non_blocking=True
+                ar_model.device, memory_format=torch.contiguous_format, non_blocking=True
             )
-        num_samples = class_tokens.shape[0]
-        context, encoder_dict = vqgan_model.encode(images, num_levels=config.model.mlm_model.stage)
-        generated_samples, _ = conditional_sample(
-            mlm_model,
+        generated_samples, _ = residual_sample(
+            ar_model,
             vqgan_model,
-            context=context,
-            num_samples=num_samples,
-            labels=class_tokens.long(),
-            **get_sampling_kwargs(config)
+            config=config,
+            labels=class_tokens,
         )
         
         generated_samples = torch.clamp(generated_samples, 0.0, 1.0)
@@ -693,7 +688,7 @@ def reconstructed_and_predicted_images(
         accelerator: The accelerator
         global_step -> int: The current training step.
     """
-    logger = get_logger(name="CondGen", log_level="INFO")
+    logger = get_logger(name="ResAR", log_level="INFO")
     logger.info("Decoding images...")
 
     codebook_size = config.model.vq_model.codebook_size[config.model.mlm_model.stage]
@@ -723,9 +718,8 @@ def reconstructed_and_predicted_images(
 
 @torch.no_grad()
 def generate_images(
-    model: torch.nn.Module,
+    ar_model: torch.nn.Module,
     vqgan_model: torch.nn.Module,
-    context: torch.Tensor,
     labels: torch.Tensor,
     config,
     accelerator,
@@ -742,18 +736,15 @@ def generate_images(
         - global_step -> int: The current training step. This is used to create the output filename.
         - output_dir -> Text: The output directory.
     """
-    logger = get_logger(name="CondGen", log_level="INFO")
+    logger = get_logger(name="ResAR", log_level="INFO")
     logger.info("Generating images...")
 
-    num_samples = context.shape[0]
 
-    generated_samples, _ = conditional_sample(
-        model,
+    generated_samples, _ = residual_sample(
+        ar_model,
         vqgan_model,
-        context=context,
-        num_samples=num_samples,
+        config=config,
         labels=labels,
-        **get_sampling_kwargs(config)
     )
     
     images_wandb, images_tensorboard = make_viz_generated_stage_two(generated_samples)
@@ -778,7 +769,7 @@ def generate_images(
 
 def save_checkpoint(model, output_dir, accelerator, global_step) -> Path:
     save_path = Path(output_dir) / f"checkpoint-{global_step}"
-    logger = get_logger(name="CondGen", log_level="INFO")
+    logger = get_logger(name="ResAR", log_level="INFO")
 
     # retrieve the model on all processes for deepspeed stage 3 to work then save on one process (we are not using stage 3 yet)
     state_dict = accelerator.get_state_dict(model)
@@ -799,8 +790,6 @@ def save_checkpoint(model, output_dir, accelerator, global_step) -> Path:
             shutil.copytree(save_path, f"{output_dir}/archive/checkpoint-{global_step}", dirs_exist_ok=True)
             print(f"Checkpoint {global_step} archived.")
 
-    
-
     return save_path
 
 
@@ -817,7 +806,7 @@ def load_checkpoint(
     Returns:
         int: The training step of the loaded checkpoint.
     """
-    logger = get_logger(name="CondGen", log_level="INFO")
+    logger = get_logger(name="ResAR", log_level="INFO")
     logger.info(f"Load checkpoint from {checkpoint_path}")
 
     accelerator.load_state(checkpoint_path)
