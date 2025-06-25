@@ -8,6 +8,8 @@ import torch
 from .masking import get_masking_ratio
 from .factorization import combine_factorized_tokens
 
+from utils.script_utils import get_sampling_kwargs
+
 
 @torch.no_grad()
 def sample(
@@ -61,6 +63,7 @@ def sample(
         # goldfish, chicken, tiger cat, hourglass, ship, dog, race car, airliner, teddy bear, random
         labels = [1, 7, 282, 604, 724, 179, 751, 404, 850, torch.randint(0, 999, size=(1,))] * (num_samples // 10)
         labels = torch.LongTensor(labels).to(device)
+    num_samples = labels.shape[0] 
 
     drop_labels = torch.ones(num_samples, dtype=bool, device=device)
     spatial_size = int(patch_size ** 2)
@@ -131,8 +134,8 @@ def sample(
         l_full_tokens.append(predicted_tokens)
 
     predicted_tokens = combine_factorized_tokens(predicted_tokens, codebook_size, codebook_splits)
-
-    generated_image = vqgan_model.decode_tokens(predicted_tokens)
+    l_full_tokens.append(predicted_tokens)
+    generated_image = vqgan_model.decode_tokens(predicted_tokens, num_level=0)
     return generated_image, l_full_tokens
 
 @torch.no_grad()
@@ -268,6 +271,68 @@ def conditional_sample(
         l_full_tokens.append(predicted_tokens)
 
     predicted_tokens = combine_factorized_tokens(predicted_tokens, codebook_size=codebook_size, splits=codebook_splits, bits=bits, variants=variants)
-
+    l_full_tokens.append(predicted_tokens)
     generated_image = vqgan_model.decode_tokens(predicted_tokens, context=context, num_level=stage)
     return generated_image, l_full_tokens
+
+@torch.no_grad()
+def residual_sample(
+        model,
+        vqgan_model,
+        config, 
+        num_samples: int = 10,
+        labels: Optional[torch.Tensor] = None,
+):      
+    device = model.device
+    if labels is None:
+        # goldfish, chicken, tiger cat, hourglass, ship, dog, race car, airliner, teddy bear, random
+        labels = [1, 7, 282, 604, 724, 179, 751, 404, 850, torch.randint(0, 999, size=(1,))] * (num_samples // 10)
+        labels = torch.LongTensor(labels).to(device)
+
+    token_maps = []
+    images = []
+
+    configs = model.configs
+    cur_stage = model.cur_stage
+    num_samples = labels.shape[0]
+
+    generated_images, l_full_tokens = sample(
+        model.base_model,
+        vqgan_model,
+        num_samples=num_samples,
+        labels=labels,
+        **get_sampling_kwargs(
+            config=configs[0],
+        )
+    )
+    predicted_tokens = l_full_tokens[-1]
+    context = vqgan_model.get_codebook_entry(
+        predicted_tokens,
+        num_level=0
+    )
+    token_maps.append(predicted_tokens)
+    images.append(generated_images)
+
+    for i, cond_model in enumerate(model.cond_models[:cur_stage]):
+        stage = i + 1
+        generated_images, l_full_tokens = conditional_sample(
+            cond_model,
+            vqgan_model,
+            context=context,
+            num_samples=num_samples,
+            labels=labels,
+            **get_sampling_kwargs(
+                config=configs[stage],
+            )
+        )
+        predicted_tokens = l_full_tokens[-1]
+        context = vqgan_model.get_codebook_entry(
+            predicted_tokens,
+            num_level=stage
+        ) + context
+        token_maps.append(predicted_tokens)
+        images.append(generated_images)
+    images = torch.stack(images, dim=0)
+    token_maps = torch.stack(token_maps, dim=0)
+    generated_images = images[model.cur_stage]
+    return generated_images, {"generated_images": generated_images, "token_maps": token_maps, }
