@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-4-resume
+#SBATCH --job-name=vae-4-half_weight
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -40,8 +40,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ### Set run name ###
 ####################
 # RUN_NAME="4level-from_scratch-long"
-RUN_NAME="4level-resume_from_1lvl"
-# RUN_NAME="4lvl-from_scratch-half_weight"
+# RUN_NAME="4level-resume_from_1lvl"
+RUN_NAME="4lvl-from_scratch-half_weight"
 # RUN_NAME="4lvl-from_scratch-base_3"
 # RUN_NAME="4lvl-from_scratch-base_4"
 # RUN_NAME="4lvl-from_scratch-half_quantize_weight"
@@ -59,10 +59,10 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml
 ###################
 ## Model args #####
 ###################
-MODEL_ARGS="model.vq_model.schedule_type=uniform"
-# MODEL_ARGS="model.vq_model.schedule_type=weighted \
-#     model.vq_model.weights=[3,1,1,1] \
-#     "
+# MODEL_ARGS="model.vq_model.schedule_type=uniform"
+MODEL_ARGS="model.vq_model.schedule_type=weighted \
+    model.vq_model.weights=[3,1,1,1] \
+    "
 # MODEL_ARGS="
 #     model.vq_model.entropy_gamma=[1.0,0.5,0.25,0.125] \
 #     "
