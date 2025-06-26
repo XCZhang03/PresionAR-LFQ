@@ -10,7 +10,7 @@
 #SBATCH --nodes=1                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=8           # number of CPU cores per task
-#SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:1                # number of GPUs per node
+#SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:2                # number of GPUs per node
 #SBATCH -t 0-01:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 #SBATCH --account=kempner_sham_lab
@@ -19,7 +19,7 @@
 ### Set enviroment ###
 ######################
 source activateEnvironment.sh
-GPUS_PER_NODE=1
+GPUS_PER_NODE=2
 export LOG_LEVEL=INFO
 ######################
 
@@ -59,8 +59,7 @@ vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-
 ###################
 ## Model args #####
 ###################
-MODEL_ARGS="
-    model.mlm_model.context_conditioning=embed \
+MODEL_ARGS="model.mlm_model.context_conditioning=embed \
     model.mlm_model.label_conditioning=concat \
     "
 ###################
@@ -86,7 +85,7 @@ srun bash -c "
     training.mixed_precision="bf16" \
     model.mlm_model.num_steps=4 \
     model.mlm_model.depth=20 \
-    model.mlm_model.embed_dim=768 \
+    model.mlm_model.hidden_dim=768 \
     model.mlm_model.heads=12 \
     ${MODEL_ARGS} \
     "
