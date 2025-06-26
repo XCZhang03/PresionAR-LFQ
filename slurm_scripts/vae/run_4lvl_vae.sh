@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-4-half_ent_w
+#SBATCH --job-name=vae-4-scratch
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -39,13 +39,13 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-# RUN_NAME="4level-from_scratch-long"
+RUN_NAME="4level-from_scratch-long"
 # RUN_NAME="4level-resume_from_1lvl"
 # RUN_NAME="4lvl-from_scratch-half_weight"
 # RUN_NAME="4lvl-from_scratch-base_3"
 # RUN_NAME="4lvl-from_scratch-base_4"
 # RUN_NAME="4lvl-from_scratch-half_quantize_weight"
-RUN_NAME="4lvl-half_entropy_gamma-from_scratch"
+# RUN_NAME="4lvl-half_entropy_gamma-from_scratch"
 ####################
 
 
@@ -55,15 +55,23 @@ RUN_NAME="4lvl-half_entropy_gamma-from_scratch"
 config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml
 ###################
 
+
+###################
+## Model args #####
+###################
+MODEL_ARGS="model.vq_model.schedule_type=uniform"
+# MODEL_ARGS="model.vq_model.schedule_type=weighted \
+#     model.vq_model.weights=[3,1,1,1] \
+#     "
+# MODEL_ARGS="
+#     model.vq_model.entropy_gamma=[1.0,0.5,0.25,0.125] \
+#     "
+
+
 srun bash -c "
     accelerate launch \
     --multi_gpu \
-    --rdzv_backend c10d \
     --num_processes $NUM_PROCESSES \
-    --num_machines $NNODES \
-    --main_process_ip $head_node_ip \
-    --main_process_port 29500 \
-    --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$config_file \
     training.per_gpu_batch_size=32 \
@@ -71,7 +79,7 @@ srun bash -c "
     experiment.save_every=1_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
-    model.vq_model.entropy_gamma=[1.0,0.5,0.25,0.125] \
+    ${MODEL_ARGS} \
     "
 
 
