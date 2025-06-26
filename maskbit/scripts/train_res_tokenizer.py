@@ -353,7 +353,7 @@ def main():
         local_ckpt_list = list(glob.glob(os.path.join(output_dir, "checkpoints", "checkpoint*")))
         if len(local_ckpt_list) >= 1:
             for checkpoint_path in local_ckpt_list:
-                if not os.path.exists(checkpoint_path / "metadata.json"):
+                if not os.path.exists(f"{checkpoint_path}/metadata.json"):
                     logger.warning(f"Checkpoint {checkpoint_path} does not have metadata.json, skipping it.")
                     local_ckpt_list.remove(checkpoint_path)
             if len(local_ckpt_list) > 1:
