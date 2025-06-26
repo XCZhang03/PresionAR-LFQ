@@ -22,7 +22,7 @@ SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="4lvl-test-sd-2"
+RUN_NAME="4lvl-test-config"
 ####################
 
 
@@ -38,9 +38,6 @@ SCRIPT_ARGS="
     experiment.eval_every=100 \
     experiment.run_name=${RUN_NAME} \
     experiment.logger=tensorboard \
-    model.vq_model.finetune_decoder=true \
-    model.vq_model.schedule_type="weighted"  \
-    model.vq_model.weights=[1,0,0,0] \
     experiment.init_checkpoint="${ACCELERATE_DIR}/runs/outputs/rqbit_tokenizer_10bit/4lvl-test-loss_weight/archive/checkpoint-100" \
     "
     

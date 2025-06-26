@@ -15,7 +15,7 @@ def get_config():
         conf.experiment.eval_loss_every = conf.experiment.eval_every
         conf.experiment.eval_gen_every = conf.experiment.eval_every
     if conf.model.vq_model.get("codebook_size", None) is None:
-        conf.model.vq_model.codebook_size = [conf.model.vq_model.token_size ** variants for variants in conf.model.vq_model.variants]
+        conf.model.vq_model.codebook_size = [variants ** conf.model.vq_model.token_size for variants in conf.model.vq_model.variants]
     
     return conf
 
