@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=embed-concat-2lvl
-#SBATCH -p kempner_h100
+#SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
@@ -10,7 +10,7 @@
 #SBATCH --nodes=1                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=8           # number of CPU cores per task
-#SBATCH --gres=gpu:4                # number of GPUs per node
+#SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:4                # number of GPUs per node
 #SBATCH -t 4-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 #SBATCH --account=kempner_sham_lab
