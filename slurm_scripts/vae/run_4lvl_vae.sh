@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-4-scratch
+#SBATCH --job-name=vae-4-resume
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -39,8 +39,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="4level-from_scratch-long"
-# RUN_NAME="4level-resume_from_1lvl"
+# RUN_NAME="4level-from_scratch-long"
+RUN_NAME="4level-resume_from_1lvl"
 # RUN_NAME="4lvl-from_scratch-half_weight"
 # RUN_NAME="4lvl-from_scratch-base_3"
 # RUN_NAME="4lvl-from_scratch-base_4"
