@@ -22,7 +22,7 @@ SCRIPT="${ACCELERATE_DIR}/scripts/train_ar.py"
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="test-stage1"
+RUN_NAME="test-stage1-new_ckpt"
 ####################
 
 ###################
@@ -36,6 +36,13 @@ config_file=$ACCELERATE_DIR/configs/ar/ar_generator_10bit_4lvl.yaml
 ####################
 vqgan_checkpoint="/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/4lvl-test-loss_weight/archive/checkpoint-200/ema_model"
 ####################
+
+
+######################
+## Stage model ckpt ##
+######################
+stage_0_model_checkpoint=runs/outputs/maskbit_generator_10bit/test-base-4lvl-2variant/checkpoints/checkpoint_0/ema_model
+######################
 
 ## change the batch size according to GPU memory
 SCRIPT_ARGS="
@@ -53,6 +60,7 @@ SCRIPT_ARGS="
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
     model.cond_model.num_steps=2 \
     model.base_model.num_steps=2 \
+    model.ar_model.stage_0_model_checkpoint=${stage_0_model_checkpoint} \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly

@@ -8,7 +8,7 @@ cd $ACCELERATE_DIR
 ### Set GPUs #########
 ######################
 GPUS_PER_NODE=1
-export CUDA_VISIBLE_DEVICES=6,7
+export CUDA_VISIBLE_DEVICES=0,
 ######################
 
 
@@ -46,7 +46,7 @@ SCRIPT_ARGS="
     dataset.params.eval_shards_path_or_url=./shards/val/imagenet-val-0000.tar \
     experiment.save_every=100 \
     experiment.generate_every=100 \
-    experiment.eval_every=200 \
+    experiment.eval_every=100 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
     experiment.logger=tensorboard \
