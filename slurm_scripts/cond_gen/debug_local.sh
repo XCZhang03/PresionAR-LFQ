@@ -51,6 +51,7 @@ SCRIPT_ARGS="
     experiment.run_name=${RUN_NAME} \
     experiment.logger=tensorboard \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
+    losses.mlm.masked_only=true \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly

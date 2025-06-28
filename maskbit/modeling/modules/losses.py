@@ -287,7 +287,7 @@ class VQGANLoss(torch.nn.Module):
 
 
 class MLMLoss(torch.nn.Module):
-    def __init__(self, label_smoothing: float = 0.1, sum_splits: bool = False):
+    def __init__(self, label_smoothing: float = 0.1, sum_splits: bool = False, masked_only: bool = False):
         """ Initializes the MLM loss, which is essentially a CrossEntropy loss with label smoothing.
 
         Args:
@@ -298,6 +298,7 @@ class MLMLoss(torch.nn.Module):
         self.label_smoothing = label_smoothing
         self.criterion = torch.nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
         self.sum_splits = sum_splits
+        self.masked_only = masked_only
 
     def forward(
         self,
@@ -317,8 +318,11 @@ class MLMLoss(torch.nn.Module):
             loss_dict -> Mapping[Text, torch.Tensor]: The loss dictionary for logging individual losses.
         """
         b, n, m, codebook_size = inputs.shape
-        loss = self.criterion(inputs.reshape(-1, codebook_size), targets.view(-1))
-        
+        if self.masked_only:
+            loss = self.criterion(inputs[masks, :], targets[masks])
+        else:
+            loss = self.criterion(inputs.reshape(-1, codebook_size), targets.view(-1))
+        mlm_loss = self.criterion(inputs.detach().reshape(-1, codebook_size), targets.view(-1))
         correct_tokens = (torch.argmax(inputs.detach(), dim=-1) == targets).float().mean() ** m
 
         masked_input = inputs[masks, :].detach()
@@ -330,7 +334,7 @@ class MLMLoss(torch.nn.Module):
             masked_loss *= m
 
         loss_dict = {
-            "mlm_loss": loss,
+            "mlm_loss": mlm_loss,
             "correct_tokens": correct_tokens,
             "masked_token_loss": masked_loss,
             "masked_correct_tokens": masked_correct_tokens,

@@ -171,7 +171,7 @@ def main():
         accelerator.register_save_state_pre_hook(save_model_hook)
 
     loss_config = config.losses.mlm
-    loss_module = MLMLoss(loss_config.label_smoothing, loss_config.sum_splits)
+    loss_module = MLMLoss(loss_config.label_smoothing, loss_config.sum_splits, loss_config.get("masked_only", False))
 
     # Print Model:
     vqgan_summary_str = summary(
