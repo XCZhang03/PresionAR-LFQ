@@ -72,9 +72,7 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml
 #     model.vq_model.variants=[2,2,2,2] \
 #     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-2variant-from_scratch-long/checkpoints/checkpoint_86 \
 #     "
-MODEL_ARGS="
-    model.vq_model.scales=[1,0.8,0.6,0.4] \
-    "
+MODEL_ARGS="model.vq_model.scales=[1,0.8,0.6,0.4]"
 ###################
 
 srun bash -c "
@@ -88,7 +86,7 @@ srun bash -c "
     experiment.save_every=1_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
-    $MODEL_ARGS \
+    ${MODEL_ARGS} \
     "
 
 
