@@ -22,13 +22,13 @@ SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="4lvl-test-config"
+RUN_NAME="4lvl-vq-test"
 ####################
 
 
 ## change the batch size according to GPU memory
 SCRIPT_ARGS="
-    config=${ACCELERATE_DIR}/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml \
+    config=${ACCELERATE_DIR}/configs/tokenizer/rqgan_tokenizer_10bit_4lvl.yaml \
     training.per_gpu_batch_size=16 \
     training.gradient_accumulation_steps=2 \
     dataset.params.train_shards_path_or_url=./shards/train/imagenet-train-{0000..0008}.tar \
@@ -38,7 +38,7 @@ SCRIPT_ARGS="
     experiment.eval_every=100 \
     experiment.run_name=${RUN_NAME} \
     experiment.logger=tensorboard \
-    experiment.init_checkpoint="${ACCELERATE_DIR}/runs/outputs/rqbit_tokenizer_10bit/4lvl-test-loss_weight/archive/checkpoint-100" \
+    model.vq_model.input_strides=[2,2,2,1] \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly
