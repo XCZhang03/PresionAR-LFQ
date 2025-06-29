@@ -88,7 +88,7 @@ srun bash -c "
     experiment.save_every=1_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
-    ${MODEL_ARGS} 
+    ${MODEL_ARGS} \
     "
 
 
