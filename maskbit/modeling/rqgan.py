@@ -10,7 +10,7 @@ from modeling.modules import (BaseModel, ConvDecoder, ConvDecoderLegacy,
                               ConvEncoder)
 # from modeling.quantizer import LookupFreeQuantizer, SimpleVectorizer
 from modeling.quantizer.residual_lfq import ResidualLFQ
-from modeling.quantizer.residual_quantizer import ResidualQuantizer
+from modeling.quantizer.residual_vq import ResidualVQ
 
 
 def choose_vector_quantizer_class(config):
@@ -25,15 +25,17 @@ def choose_vector_quantizer_class(config):
             config.entropy_loss_temperature,
             config.entropy_gamma,
         )
-    elif config.quantizer_type == "residual":
-        return ResidualQuantizer(
-            config.num_quantizers,
+    elif config.quantizer_type == "residual_vq":
+        return ResidualVQ(
             config.codebook_size,
             config.token_size,
+            config.num_quantizers,
             config.commitment_cost,
             config.entropy_loss_weight,
             config.entropy_loss_temperature,
             config.entropy_gamma,
+            config.get("input_strides", 1),
+            config.get("shared_codebook", False),
             config.get("use_l2_normalisation", False),
         )
 
@@ -177,24 +179,41 @@ class RQModel(BaseModel):
 
 if __name__ == "__main__":
     from omegaconf import OmegaConf
-    config = OmegaConf.load("maskbit/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml").model.vq_model
-    model = RQModel(config)
+    config = OmegaConf.load("maskbit/configs/tokenizer/rqgan_tokenizer_10bit_4lvl.yaml").model.vq_model
+    config.input_strides = [2, 2, 2, 1]
+    model = RQModel(config).to("cuda")
     print(model)
     print(model.codebook_size)
-    image = torch.randn(2, 3, 256, 256)
-    z_quantized, result_dict = model.encode(image,num_levels=1)
+    image = torch.randn(2, 3, 256, 256).to("cuda").requires_grad_(True)
+    z_quantized, result_dict = model.encode(image,num_levels=2)
     print(z_quantized.shape)
-    decoded_tokens = model.decode_tokens(result_dict["min_encoding_indices"][0], num_level=0)
+    decoded_tokens = model.decode_tokens(result_dict["min_encoding_indices"][:2])
     print(decoded_tokens.shape)
     decoded = model.decode(z_quantized)
     print(decoded.shape)
     print(torch.abs(decoded - decoded_tokens).max().item())
     # assert torch.allclose(decoded, decoded_tokens, atol=1e-6)
-    decoded, result_dict = model(image,num_levels=1)
+    decoded, result_dict = model(image, num_levels=2)
     # assert torch.allclose(decoded, decoded_tokens, atol=1e-6)
     print(torch.abs(decoded - decoded_tokens).max().item())
-    tokens = torch.randint(0, model.codebook_size[0], (3, 2, 256))
+    tokens = torch.randint(0, model.codebook_size[0], (2, 2, 256)).to("cuda")
     decoded_tokens = model.decode_tokens(tokens)
     print(decoded_tokens.shape)
-
+    context, encoder_dict = model.encode(image, num_levels=2)
+    input_tokens = encoder_dict["min_encoding_indices"][2]
+    context_flat = rearrange(context, 'b c h w -> b (h w) c').contiguous()
+    input_tokens = input_tokens.reshape(input_tokens.shape[0], -1)
+    print(input_tokens.shape, context_flat.shape)
+    input_embed = model.quantize.get_codebook_entry(input_tokens, num_level=2)
+    quantized_flat = input_embed + context_flat
+    decoded_tokens = model.decode_tokens(input_tokens, num_level=2, context=context)
+    decoded, encoder_dict = model(image, num_levels=3)
+    print((decoded - decoded_tokens).abs().max().item())
+    context_patched = rearrange(context_flat, 'b (h p1 w p2) c -> b h w (c p1 p2)', p1=model.config.input_strides[2], p2=model.config.input_strides[2], h=int(math.sqrt(float(context_flat.size(1))) // model.config.input_strides[2]))
+    input_embed_patched = rearrange(input_embed, 'b (h p1 w p2) c -> b h w (c p1 p2)', h=int(math.sqrt(float(context_flat.size(1))) // model.config.input_strides[2]), p1=model.config.input_strides[2], p2=model.config.input_strides[2])
+    quantized_patched = input_embed_patched + context_patched
+    quantized = rearrange(quantized_patched, 'b h w (c p1 p2) -> b c (h p1) (w p2)', p1=model.config.input_strides[2], p2=model.config.input_strides[2])
+    decoded_tokens = model.decode(quantized)
+    print(decoded_tokens.shape)
+    print((decoded - decoded_tokens).abs().max().item())
 

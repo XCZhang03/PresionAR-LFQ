@@ -1,22 +1,22 @@
 experiment:
     project: "MaskBit"
-    name: "rqgan_10bit"
+    name: "rqgan_tokenizer"
+    run_name: "rqgan_10bit_4lvl"
     max_train_examples: 1_281_167 # total number of imagenet examples
-    save_every: 100
-    eval_every: 100
-    generate_every: 200
+    save_every: 1000
+    eval_every: 20_000
+    generate_every: 2000
     log_every: 50
     log_grad_norm_every: 100_000
-    logger: "tensorboard"
+    logger: "wandb"
     resume: True
-    # init_checkpoint: ""
-    init_checkpoint: "debug/outputs/rqgan_10bit/2025-03-17 14:15:34/checkpoint-100"
+    init_checkpoint: ""
     # vqgan_checkpoint: "MODEL_PATH/vqgan_plus_10bit.bin"  # Only for evaluating a trained model
 
 model:
     vq_model:
         model_class: "rqgan"
-        quantizer_type: "residual"
+        quantizer_type: "residual_vq"
         codebook_size: 1024
         token_size: 256
         commitment_cost: 0.25
@@ -31,7 +31,11 @@ model:
         sample_with_conv: True
 
         ## residual quantization
-        num_quantizers: 3
+        num_quantizers: 4
+        shared_codebook: False
+        schedule_type: "uniform"
+        weights: null
+        input_strides: 1
 
     discriminator:
         name: "VQGAN+Discriminator"
