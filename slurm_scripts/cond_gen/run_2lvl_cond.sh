@@ -81,7 +81,7 @@ srun bash -c "
     config=$config_file \
     training.per_gpu_batch_size=64 \
     training.gradient_accumulation_steps=1 \
-    experiment.eval_gen_every=100_000 \
+    experiment.eval_gen_every=20_000 \
     experiment.eval_loss_every=10_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
