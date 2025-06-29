@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-4-large_scale
+#SBATCH --job-name=vae-4-2variant
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -46,8 +46,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 # RUN_NAME="4lvl-from_scratch-base_4"
 # RUN_NAME="4lvl-from_scratch-half_quantize_weight"
 # RUN_NAME="4lvl-half_entropy_gamma-from_scratch"
-# RUN_NAME="4lvl-2variant-resume"
-RUN_NAME="4lvl-large_scale"
+RUN_NAME="4lvl-2variant-resume"
+# RUN_NAME="4lvl-large_scale"
 ####################
 
 
@@ -66,10 +66,10 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml
 #     model.vq_model.weights=[3,1,1,1] \
 #     "
 # MODEL_ARGS="model.vq_model.entropy_gamma=[1.0,0.5,0.25,0.125]"
-# MODEL_ARGS="model.vq_model.variants=[2,2,2,2] \
-#     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-2variant-from_scratch-long/checkpoints/checkpoint_86 \
-#     "
-MODEL_ARGS="model.vq_model.scales=[1,0.8,0.6,0.4]"
+MODEL_ARGS="model.vq_model.variants=[2,2,2,2] \
+    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-2variant-from_scratch-long/checkpoints/checkpoint_86 \
+    "
+# MODEL_ARGS="model.vq_model.scales=[1,0.8,0.6,0.4]"
 ###################
 
 srun bash -c "
