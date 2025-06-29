@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=concat-concat-2lvl
+#SBATCH --job-name=embed-concat-2lvl
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -40,6 +40,7 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ### Set run name ###
 ####################
 RUN_NAME="2lvl-concat-concat"
+RUN_NAME="2lvl-embed-concat"
 ####################
 
 ###################
@@ -59,13 +60,13 @@ vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-
 ###################
 ## Model args #####
 ###################
-# MODEL_ARGS="model.mlm_model.context_conditioning=embed \
-#     model.mlm_model.label_conditioning=concat \
-#     "
-MODEL_ARGS="model.mlm_model.context_conditioning=concat \
+MODEL_ARGS="model.mlm_model.context_conditioning=embed \
     model.mlm_model.label_conditioning=concat \
-    model.mlm_model.tie_context_pos_embeddings=true \
     "
+# MODEL_ARGS="model.mlm_model.context_conditioning=concat \
+#     model.mlm_model.label_conditioning=concat \
+#     model.mlm_model.tie_context_pos_embeddings=true \
+#     "
 ###################
 
 srun bash -c "
