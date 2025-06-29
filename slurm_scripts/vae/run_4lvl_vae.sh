@@ -88,7 +88,7 @@ srun bash -c "
     experiment.save_every=1_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
-    model.vq_model.scales=[1,0.8,0.6,0.4] \
+    $MODEL_ARGS \
     "
 
 
