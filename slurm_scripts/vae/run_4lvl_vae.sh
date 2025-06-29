@@ -65,11 +65,8 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml
 # MODEL_ARGS="model.vq_model.schedule_type=weighted \
 #     model.vq_model.weights=[3,1,1,1] \
 #     "
-# MODEL_ARGS="
-#     model.vq_model.entropy_gamma=[1.0,0.5,0.25,0.125] \
-#     "
-# MODEL_ARGS="
-#     model.vq_model.variants=[2,2,2,2] \
+# MODEL_ARGS="model.vq_model.entropy_gamma=[1.0,0.5,0.25,0.125]"
+# MODEL_ARGS="model.vq_model.variants=[2,2,2,2] \
 #     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-2variant-from_scratch-long/checkpoints/checkpoint_86 \
 #     "
 MODEL_ARGS="model.vq_model.scales=[1,0.8,0.6,0.4]"
