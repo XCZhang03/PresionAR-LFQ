@@ -244,7 +244,7 @@ class CondLFQBert(BaseModel):
             num_classes=1000,
             ## masking condition
             mask_pos_embedding=False,
-            mask_token=True,
+            mask_token_embedding=True,
     ):
         super().__init__()
         self.register_buffer("stage", torch.tensor(stage, dtype=torch.int32))
@@ -260,7 +260,7 @@ class CondLFQBert(BaseModel):
         assert self.effective_codebook_size ** self.splits == self.codebook_size, \
             f"Effective codebook size should match the codebook size" 
         self.mask_token = self.effective_codebook_size  # Mask token is the last token in the codebook
-        if mask_token:
+        if mask_token_embedding:
             self.mask_embed = torch.nn.init.trunc_normal_(torch.nn.Parameter(torch.zeros(1, self.effective_token_size)), 0., 0.02)
         else:
             self.mask_embed = torch.nn.Parameter(torch.zeros(1, self.effective_token_size), requires_grad=False)

@@ -120,7 +120,7 @@ def get_model_kwargs(config):
             drop_path=config.model.mlm_model.drop_path,
             label_conditioning=config.model.mlm_model.label_conditioning,
             attn_l2_norm=config.model.mlm_model.attn_l2_norm,
-            mask_token=config.model.mlm_model.get("mask_token", True),
+            mask_token_embedding=config.model.mlm_model.get("mask_token_embedding", True),
             mask_pos_embedding=config.model.mlm_model.get("mask_pos_embedding", False),
         )
     elif model_cls_name == "lfq_bert":
