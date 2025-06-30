@@ -26,7 +26,7 @@ from modeling.modules import EMAModel, MLMLoss, get_mask_tokens, conditional_sam
 # from modeling.conv_vqgan import ConvVQModel
 from modeling.rqgan import RQModel
 # from modeling.bert import Bert, LFQBert
-from modeling.cond_bert import CondBert 
+from modeling.cond_bert import CondBert, CondLFQBert 
 from evaluator import GeneratorEvaluator
 
 from utils.viz_utils import make_viz_reconstructed_stage_two, make_viz_generated_stage_two
@@ -141,7 +141,10 @@ def main():
     vqgan_model.load_pretrained(config.experiment.vqgan_checkpoint)
     vqgan_model.eval()
 
-    model_cls = CondBert
+    model_cls = {
+        "cond_bert": CondBert,
+        "cond_lfq_bert": CondLFQBert,
+    }[config.model.mlm_model.model_cls]
     mlm_model = model_cls(
         **get_model_kwargs(config),
     )

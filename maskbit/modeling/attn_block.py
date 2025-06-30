@@ -416,7 +416,7 @@ class CondTransformerEncoder(nn.Module):
             block_cls = ControlAttnBlock
         elif context_conditioning == "cross":
             block_cls = CrossAttnBlock
-        elif context_conditioning in ['embed', 'channel', 'concat']:
+        elif context_conditioning in ['embed', 'channel', 'concat', 'none']:
             block_cls = BasicAttnBlock
         elif context_conditioning == "adaln":
             block_cls = SpatialAdaLNAttnBlock
@@ -444,7 +444,7 @@ class CondTransformerEncoder(nn.Module):
     def forward(self, x, context=None, cond=None, attn_bias=None):
         B, L, C = x.shape
         if context is None:
-            assert self.context_conditioning in ['embed', 'concat', 'channel'], \
+            assert self.context_conditioning in ['embed', 'concat', 'channel', 'none'], \
                 f'context must be provided when context_conditioning is {self.context_conditioning}'
         if cond is not None:
             assert self.label_conditioning == "adaln", \

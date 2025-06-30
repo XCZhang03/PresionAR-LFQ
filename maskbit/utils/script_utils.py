@@ -32,7 +32,7 @@ def get_save_iteration(project_dir):
 
 def get_sampling_kwargs(config):
     model_cls_name = config.model.mlm_model.get("model_cls", None)
-    if model_cls_name == "cond_bert":
+    if model_cls_name == "cond_bert" or model_cls_name == "cond_lfq_bert":
         sampling_kwargs = dict(
             stage=config.model.mlm_model.stage,
             softmax_temperature=config.model.mlm_model.softmax_temperature,
@@ -50,7 +50,7 @@ def get_sampling_kwargs(config):
             bits=config.model.vq_model.token_size,
             variants=config.model.vq_model.variants[config.model.mlm_model.stage],
         )
-    elif model_cls_name == "lfq_bert":
+    elif model_cls_name == "lfq_bert" or model_cls_name == "cond_lfq_bert":
         sampling_kwargs = dict(
             softmax_temperature=config.model.mlm_model.softmax_temperature,
             randomize_temperature=config.model.mlm_model.randomize_temperature,
@@ -91,6 +91,27 @@ def get_model_kwargs(config):
             attn_l2_norm=config.model.mlm_model.attn_l2_norm,
             tie_embeddings=config.model.mlm_model.get("tie_embeddings", False),
             tie_context_pos_embeddings=config.model.mlm_model.get("tie_context_pos_embeddings", False),
+        )
+    elif model_cls_name == "cond_lfq_bert":
+        model_kwargs = dict(
+            stage=config.model.mlm_model.stage,
+            img_size=config.dataset.preprocessing.resolution,
+            token_size=config.model.vq_model.token_size,
+            variants=config.model.vq_model.variants[config.model.mlm_model.stage],
+            scales=config.model.vq_model.scales,
+            codebook_size=config.model.vq_model.codebook_size[config.model.mlm_model.stage],
+            hidden_dim=config.model.mlm_model.hidden_dim,
+            depth=config.model.mlm_model.depth,
+            heads=config.model.mlm_model.heads,
+            mlp_ratio=config.model.mlm_model.mlp_ratio,
+            codebook_splits=config.model.mlm_model.codebook_splits,
+            input_stride=2**(config.model.vq_model.num_resolutions - 1),
+            dropout=config.model.mlm_model.dropout,
+            drop_path=config.model.mlm_model.drop_path,
+            label_conditioning=config.model.mlm_model.label_conditioning,
+            attn_l2_norm=config.model.mlm_model.attn_l2_norm,
+            mask_token=config.model.mlm_model.get("mask_token", True),
+            mask_pos_embedding=config.model.mlm_model.get("mask_pos_embedding", False),
         )
     elif model_cls_name == "lfq_bert":
         model_kwargs = dict(

@@ -6,8 +6,8 @@ from omegaconf import ListConfig
 import torch
 from torch import nn
 
-from modeling.cond_bert import CondBert
-from modeling.bert import LFQBert
+from modeling.cond_bert import CondBert, CondLFQBert
+from modeling.bert import LFQBert, Bert
 from modeling.modules import BaseModel
 
 from utils.script_utils import get_model_kwargs
@@ -41,15 +41,20 @@ class ResAR(BaseModel):
         self.cur_stage = config.model.ar_model.get('cur_stage', None)
         self.configs = [get_stage_config(config, i) for i in range(self.num_stages)]
        
-
-        self.base_model = LFQBert(
+        model_cls = {
+            "bert": Bert,
+            "lfq_bert": LFQBert,
+            "cond_bert": CondBert,
+            "cond_lfq_bert": CondLFQBert,
+        }
+        self.base_model = model_cls[self.configs[0].mlm_model.model_cls](
             **get_model_kwargs(config=self.configs[0]),
         )
         self.configs[0].model.mlm_model.mask_token = self.base_model.mask_token
         
         self.cond_models = nn.ModuleList()
         for i in range(1, self.num_stages):
-            model = CondBert(**get_model_kwargs(config=self.configs[i]))
+            model = model_cls[self.configs[i].mlm_model.model_cls](**get_model_kwargs(config=self.configs[i]))
             self.cond_models.append(model)
             self.configs[i].model.mlm_model.mask_token = model.mask_token
 
