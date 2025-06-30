@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=adaln-adaln-2lvl
+#SBATCH --job-name=embed-adaln-2lvl
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -41,7 +41,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 # RUN_NAME="2lvl-concat-concat"
 # RUN_NAME="2lvl-embed-concat"
-RUN_NAME="2lvl-adaln-adaln"
+# RUN_NAME="2lvl-adaln-adaln"
+RUN_NAME="2lvl-embed-adaln"
 ####################
 
 ###################
@@ -68,7 +69,10 @@ vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-
 #     model.mlm_model.label_conditioning=concat \
 #     model.mlm_model.tie_context_pos_embeddings=true \
 #     "
-MODEL_ARGS="model.mlm_model.context_conditioning=adaln \
+# MODEL_ARGS="model.mlm_model.context_conditioning=adaln \
+#     model.mlm_model.label_conditioning=adaln \
+#     "
+MODEL_ARGS="model.mlm_model.context_conditioning=embed \
     model.mlm_model.label_conditioning=adaln \
     "
 ###################
