@@ -141,7 +141,6 @@ class ResidualVQ(torch.nn.Module):
         all_result_dict = {}
         all_result_dict['min_encoding_indices'] = [result_dict['min_encoding_indices'] for result_dict in all_results]
         all_result_dict.update({key: torch.stack([result_dict[key] for result_dict in all_results], dim=0) for key in all_results[0].keys() if key != "min_encoding_indices" })
-        breakpoint()
         # sum the losses
         all_result_dict["quantizer_loss"] = (all_result_dict["quantizer_loss"] * loss_weight).sum(dim=0)
         all_result_dict["commitment_loss"] = (all_result_dict["commitment_loss"] * loss_weight).sum(dim=0)

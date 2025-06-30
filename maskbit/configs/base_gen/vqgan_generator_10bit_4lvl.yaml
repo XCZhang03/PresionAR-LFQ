@@ -1,7 +1,7 @@
 experiment:
     project: "MaskBit"
     name: "maskbit_generator_10bit"
-    run_name: "lfq-4lvl"
+    run_name: "vq-4lvl"
     max_train_examples: 1_281_167 # total number of imagenet examples
     save_every: 1_000
     eval_every: 100_000
@@ -15,8 +15,9 @@ experiment:
 model:
     vq_model:
         model_class: "rqgan"
-        quantizer_type: "residual_lfq"
-        token_size: 10
+        quantizer_type: "residual_vq"
+        codebook_size: 1024
+        token_size: 256
         commitment_cost: 0.25
         entropy_loss_weight: 0.02
         entropy_loss_temperature: 0.01
@@ -30,13 +31,13 @@ model:
 
         ## residual quantization
         num_quantizers: 4
-        scales: null 
-        variants: [2,3,3,3]
+        shared_codebook: False
+        input_strides: [2,2,2,1]
         ## precision schedule
         schedule_type: "uniform"
     
     mlm_model:
-        model_cls: "lfq_bert"
+        model_cls: "bert"
         hidden_dim: 1024
         depth: 24
         heads: 16

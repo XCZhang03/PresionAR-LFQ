@@ -32,6 +32,11 @@ def get_save_iteration(project_dir):
 
 def get_sampling_kwargs(config):
     model_cls_name = config.model.mlm_model.get("model_cls", None)
+    strides = config.model.vq_model.get("input_strides", None)
+    if strides is None:
+        strides = [1] * config.model.vq_model.num_quantizers
+    else:
+        assert len(strides) == config.model.vq_model.num_quantizers, "Input strides must match the number of quantizers."
     if model_cls_name == "cond_bert" or model_cls_name == "cond_lfq_bert":
         sampling_kwargs = dict(
             stage=config.model.mlm_model.stage,
@@ -41,7 +46,7 @@ def get_sampling_kwargs(config):
             num_steps=config.model.mlm_model.num_steps,
             guidance_scale=config.model.mlm_model.guidance_scale,
             mask_token=config.model.mlm_model.mask_token,
-            patch_size=int(config.dataset.preprocessing.resolution // (2**(config.model.vq_model.num_resolutions - 1))),
+            patch_size=int(config.dataset.preprocessing.resolution // (2**(config.model.vq_model.num_resolutions - 1) * strides[config.model.mlm_model.stage])),
             guidance_annealing=config.model.mlm_model.guidance_annealing,
             scale_pow=config.model.mlm_model.get("scale_pow", 4.0),
             use_sampling_annealing=config.model.mlm_model.get("use_sampling_annealing", False),
@@ -50,7 +55,7 @@ def get_sampling_kwargs(config):
             bits=config.model.vq_model.token_size,
             variants=config.model.vq_model.variants[config.model.mlm_model.stage],
         )
-    elif model_cls_name == "lfq_bert" or model_cls_name == "cond_lfq_bert":
+    elif model_cls_name == "lfq_bert" or model_cls_name == "bert":
         sampling_kwargs = dict(
             softmax_temperature=config.model.mlm_model.softmax_temperature,
             randomize_temperature=config.model.mlm_model.randomize_temperature,
@@ -58,7 +63,7 @@ def get_sampling_kwargs(config):
             num_steps=config.model.mlm_model.num_steps,
             guidance_scale=config.model.mlm_model.guidance_scale,
             mask_token=config.model.mlm_model.mask_token,
-            patch_size = int(config.dataset.preprocessing.resolution // (2**(config.model.vq_model.num_resolutions - 1))),
+            patch_size = int(config.dataset.preprocessing.resolution // (2**(config.model.vq_model.num_resolutions - 1) * strides[0])),
             guidance_annealing=config.model.mlm_model.guidance_annealing,
             scale_pow=config.model.mlm_model.get("scale_pow", 4.0),
             use_sampling_annealing=config.model.mlm_model.get("use_sampling_annealing", False),
@@ -71,6 +76,11 @@ def get_sampling_kwargs(config):
 
 def get_model_kwargs(config):
     model_cls_name = config.model.mlm_model.get("model_cls", None)
+    strides = config.model.vq_model.get("input_strides", None)
+    if strides is None:
+        strides = [1] * config.model.vq_model.num_quantizers
+    else:
+        assert len(strides) == config.model.vq_model.num_quantizers, "Input strides must match the number of quantizers."
     if model_cls_name == "cond_bert":
         model_kwargs = dict(
             stage=config.model.mlm_model.stage,
@@ -83,7 +93,7 @@ def get_model_kwargs(config):
             heads=config.model.mlm_model.heads,
             mlp_ratio=config.model.mlm_model.mlp_ratio,
             codebook_splits=config.model.mlm_model.codebook_splits,
-            input_stride=2**(config.model.vq_model.num_resolutions - 1),
+            input_stride=(2**(config.model.vq_model.num_resolutions - 1)) * strides[config.model.mlm_model.stage],
             dropout=config.model.mlm_model.dropout,
             drop_path=config.model.mlm_model.drop_path,
             context_conditioning=config.model.mlm_model.context_conditioning,
@@ -105,7 +115,7 @@ def get_model_kwargs(config):
             heads=config.model.mlm_model.heads,
             mlp_ratio=config.model.mlm_model.mlp_ratio,
             codebook_splits=config.model.mlm_model.codebook_splits,
-            input_stride=2**(config.model.vq_model.num_resolutions - 1),
+            input_stride=(2**(config.model.vq_model.num_resolutions - 1)) * strides[config.model.mlm_model.stage],
             dropout=config.model.mlm_model.dropout,
             drop_path=config.model.mlm_model.drop_path,
             label_conditioning=config.model.mlm_model.label_conditioning,
@@ -117,13 +127,26 @@ def get_model_kwargs(config):
         model_kwargs = dict(
             img_size=config.dataset.preprocessing.resolution,
             hidden_dim=config.model.mlm_model.hidden_dim,
-            codebook_size=config.model.vq_model.codebook_size[0],
+            codebook_size=config.model.vq_model.codebook_size if isinstance(config.model.vq_model.codebook_size, int) else config.model.vq_model.codebook_size[0],
             codebook_splits=config.model.mlm_model.codebook_splits,
             depth=config.model.mlm_model.depth,
             heads=config.model.mlm_model.heads,
             mlp_dim=config.model.mlm_model.mlp_dim,
             dropout=config.model.mlm_model.dropout,
-            input_stride=2**(config.model.vq_model.num_resolutions - 1),
+            input_stride=(2**(config.model.vq_model.num_resolutions - 1)) * strides[0],
+            use_prenorm=config.model.mlm_model.use_prenorm,
+        )
+    elif model_cls_name == "bert":
+        model_kwargs = dict(
+            img_size=config.dataset.preprocessing.resolution,
+            hidden_dim=config.model.mlm_model.hidden_dim,
+            codebook_size=config.model.vq_model.codebook_size if isinstance(config.model.vq_model.codebook_size, int) else config.model.vq_model.codebook_size[0],
+            codebook_splits=config.model.mlm_model.codebook_splits,
+            depth=config.model.mlm_model.depth,
+            heads=config.model.mlm_model.heads,
+            mlp_dim=config.model.mlm_model.mlp_dim,
+            dropout=config.model.mlm_model.dropout,
+            input_stride=(2**(config.model.vq_model.num_resolutions - 1)) * strides[0],
             use_prenorm=config.model.mlm_model.use_prenorm,
         )
     else:

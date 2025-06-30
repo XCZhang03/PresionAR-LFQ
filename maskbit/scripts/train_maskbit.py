@@ -139,7 +139,7 @@ def main():
     vqgan_model = RQModel(config.model.vq_model, legacy=False)
     vqgan_model.load_pretrained(config.experiment.vqgan_checkpoint)
     vqgan_model.eval()
-    config.model.vq_model.codebook_size = vqgan_model.codebook_size[0]
+    config.model.vq_model.codebook_size = vqgan_model.codebook_size
 
     # if config.model.vq_model.quantizer_type == "lookup-free":
     #     num_codebook_entries = 2 ** config.model.vq_model.token_size
@@ -148,8 +148,8 @@ def main():
     # else:
     #     num_codebook_entries = config.model.vq_model.codebook_size
     #     config.model.mlm_model.mask_token = int(2 ** (math.log2(num_codebook_entries) // config.model.mlm_model.codebook_splits))
-    config.model.mlm_model.mask_token = int(config.model.vq_model.variants[0] ** (config.model.vq_model.token_size // config.model.mlm_model.codebook_splits))
-    logger.info(f"Masktoken: {config.model.mlm_model.mask_token}")
+    # config.model.mlm_model.mask_token = int(config.model.vq_model.variants[0] ** (config.model.vq_model.token_size // config.model.mlm_model.codebook_splits))
+    # logger.info(f"Masktoken: {config.model.mlm_model.mask_token}")
 
     model_cls = {
         "bert": Bert,
@@ -157,45 +157,20 @@ def main():
     }[config.model.mlm_model.model_cls]
 
     mlm_model = model_cls(
-        img_size=config.dataset.preprocessing.resolution,
-        hidden_dim=config.model.mlm_model.hidden_dim,
-        codebook_size=config.model.vq_model.codebook_size,
-        codebook_splits=config.model.mlm_model.codebook_splits,
-        depth=config.model.mlm_model.depth,
-        heads=config.model.mlm_model.heads,
-        mlp_dim=config.model.mlm_model.mlp_dim,
-        dropout=config.model.mlm_model.dropout,
-        input_stride=2**(config.model.vq_model.num_resolutions - 1),
-        use_prenorm=config.model.mlm_model.use_prenorm,
+        **get_model_kwargs(config)
     )
+    config.model.mlm_model.mask_token = mlm_model.mask_token
+    logger.info(f"Masktoken: {config.model.mlm_model.mask_token}")
     # Create the EMA model
     if config.training.use_ema:
         ema_model = EMAModel(mlm_model.parameters(), decay=0.999, model_cls=model_cls,
-            img_size=config.dataset.preprocessing.resolution,
-            hidden_dim=config.model.mlm_model.hidden_dim,
-            codebook_size=config.model.vq_model.codebook_size,
-            codebook_splits=config.model.mlm_model.codebook_splits,
-            depth=config.model.mlm_model.depth,
-            heads=config.model.mlm_model.heads,
-            mlp_dim=config.model.mlm_model.mlp_dim,
-            dropout=config.model.mlm_model.dropout,
-            input_stride=2**(config.model.vq_model.num_resolutions - 1),
-            use_prenorm=config.model.mlm_model.use_prenorm,
+            **get_model_kwargs(config)
         )
 
         # Create custom saving and loading hooks so that `accelerator.save_state(...)` serializes in a nice format.
         def load_model_hook(models, input_dir):
             load_model = EMAModel.from_pretrained(os.path.join(input_dir, "ema_model"), model_cls=model_cls,
-                img_size=config.dataset.preprocessing.resolution,
-                hidden_dim=config.model.mlm_model.hidden_dim,
-                codebook_size=config.model.vq_model.codebook_size,
-                codebook_splits=config.model.mlm_model.codebook_splits,
-                depth=config.model.mlm_model.depth,
-                heads=config.model.mlm_model.heads,
-                mlp_dim=config.model.mlm_model.mlp_dim,
-                dropout=config.model.mlm_model.dropout,
-                input_stride=2**(config.model.vq_model.num_resolutions - 1),
-                use_prenorm=config.model.mlm_model.use_prenorm,
+                **get_model_kwargs(config)
             )
             ema_model.load_state_dict(load_model.state_dict())
             ema_model.to(accelerator.device)
@@ -219,10 +194,10 @@ def main():
         col_names=("input_size", "output_size", "num_params", "params_percent", "kernel_size", "mult_adds"),
         verbose=0
     )
-    patch_size = int(config.dataset.preprocessing.resolution // (2**(config.model.vq_model.num_resolutions - 1)))
+    seq_len = mlm_model.seq_len
     mlm_summary_str = summary(
         mlm_model,
-        input_data=[torch.randint(0, config.model.mlm_model.mask_token, (1, patch_size * patch_size, config.model.mlm_model.codebook_splits)),torch.ones(1, dtype=int)],
+        input_data=[torch.randint(0, config.model.mlm_model.mask_token, (1, seq_len, config.model.mlm_model.codebook_splits)),torch.ones(1, dtype=int)],
         depth=7,
         col_names=("input_size", "output_size", "num_params", "params_percent", "kernel_size", "mult_adds"),
         verbose=0
@@ -374,7 +349,7 @@ def main():
         elif len(local_ckpt_list) > 1:
             raise ValueError("There should only be one checkpoint folder.")
 
-    codebook_size = config.model.vq_model.codebook_size
+    codebook_size = config.model.vq_model.codebook_size[0]
     splits = config.model.mlm_model.codebook_splits
 
     batch_time_m = AverageMeter()
@@ -614,18 +589,7 @@ def eval_generation(
             vqgan_model,
             num_samples=num_samples,
             labels=class_tokens.long(),
-            softmax_temperature=config.model.mlm_model.softmax_temperature,
-            randomize_temperature=config.model.mlm_model.randomize_temperature,
-            mask_schedule_strategy=config.model.mlm_model.gen_mask_schedule_strategy,
-            num_steps=config.model.mlm_model.num_steps,
-            guidance_scale=config.model.mlm_model.guidance_scale,
-            mask_token=config.model.mlm_model.mask_token,
-            patch_size=patch_size,
-            guidance_annealing=config.model.mlm_model.guidance_annealing,
-            use_sampling_annealing=config.model.mlm_model.get("use_sampling_annealing", False),
-            scale_pow=scale_pow,
-            codebook_size=config.model.vq_model.codebook_size,
-            codebook_splits=config.model.mlm_model.codebook_splits,
+            **get_sampling_kwargs(config)
         )
         
         generated_samples = torch.clamp(generated_samples, 0.0, 1.0)
@@ -657,7 +621,7 @@ def reconstructed_and_predicted_images(
     logger = get_logger(name="MaskBit", log_level="INFO")
     logger.info("Decoding images...")
 
-    codebook_size = config.model.vq_model.codebook_size
+    codebook_size = config.model.vq_model.codebook_size[0]
     codebook_splits = config.model.mlm_model.codebook_splits
 
     tokens = combine_factorized_tokens(tokens, codebook_size, codebook_splits)
@@ -708,18 +672,7 @@ def generate_images(
     generated_samples, _ = sample(
         model,
         vqgan_model,
-        softmax_temperature=config.model.mlm_model.softmax_temperature,
-        randomize_temperature=config.model.mlm_model.randomize_temperature,
-        mask_schedule_strategy=config.model.mlm_model.gen_mask_schedule_strategy,
-        num_steps=config.model.mlm_model.num_steps,
-        guidance_scale=config.model.mlm_model.guidance_scale,
-        mask_token=config.model.mlm_model.mask_token,
-        patch_size=patch_size,
-        guidance_annealing=config.model.mlm_model.guidance_annealing,
-        scale_pow=scale_pow,
-        use_sampling_annealing=config.model.mlm_model.get("use_sampling_annealing", False),
-        codebook_size=config.model.vq_model.codebook_size,
-        codebook_splits=config.model.mlm_model.codebook_splits,
+        **get_sampling_kwargs(config),
     )
     
     images_wandb, images_tensorboard = make_viz_generated_stage_two(generated_samples)
