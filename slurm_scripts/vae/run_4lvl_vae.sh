@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-4-ft-dec
+#SBATCH --job-name=vae-4-huge_scale
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -48,7 +48,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 # RUN_NAME="4lvl-half_entropy_gamma-from_scratch"
 # RUN_NAME="4lvl-2variant-resume"
 # RUN_NAME="4lvl-large_scale"
-RUN_NAME="4lvl-ft-decoder-from_1lvl"
+# RUN_NAME="4lvl-ft-decoder-from_1lvl"
+RUN_NAME="4lvl-huge_scale"
 ####################
 
 
@@ -71,10 +72,11 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml
 #     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-2variant-from_scratch-long/checkpoints/checkpoint_86 \
 #     "
 # MODEL_ARGS="model.vq_model.scales=[1,0.8,0.6,0.4]"
-MODEL_ARGS="model.vq_model.finetune_decoder=true \
-    model.vq_model.schedule_type=uniform \
-    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/1level-long/archive/checkpoint_502 \
-    "
+# MODEL_ARGS="model.vq_model.finetune_decoder=true \
+#     model.vq_model.schedule_type=uniform \
+#     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/1level-long/archive/checkpoint_502 \
+#     "
+MODEL_ARGS="model.vq_model.scales=[1,1,0.8,0.5]"
 ###################
 
 srun bash -c "
