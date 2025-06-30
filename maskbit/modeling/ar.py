@@ -47,14 +47,14 @@ class ResAR(BaseModel):
             "cond_bert": CondBert,
             "cond_lfq_bert": CondLFQBert,
         }
-        self.base_model = model_cls[self.configs[0].mlm_model.model_cls](
+        self.base_model = model_cls[self.configs[0].model.mlm_model.model_cls](
             **get_model_kwargs(config=self.configs[0]),
         )
         self.configs[0].model.mlm_model.mask_token = self.base_model.mask_token
         
         self.cond_models = nn.ModuleList()
         for i in range(1, self.num_stages):
-            model = model_cls[self.configs[i].mlm_model.model_cls](**get_model_kwargs(config=self.configs[i]))
+            model = model_cls[self.configs[i].model.mlm_model.model_cls](**get_model_kwargs(config=self.configs[i]))
             self.cond_models.append(model)
             self.configs[i].model.mlm_model.mask_token = model.mask_token
 
