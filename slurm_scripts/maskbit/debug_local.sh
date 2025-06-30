@@ -22,7 +22,7 @@ SCRIPT="${ACCELERATE_DIR}/scripts/train_maskbit.py"
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="test-base-4lvl-2variant"
+RUN_NAME="test-lfq"
 ####################
 
 ###################

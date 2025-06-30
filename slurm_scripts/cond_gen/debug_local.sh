@@ -8,7 +8,7 @@ cd $ACCELERATE_DIR
 ### Set GPUs #########
 ######################
 GPUS_PER_NODE=1
-export CUDA_VISIBLE_DEVICES=0,
+export CUDA_VISIBLE_DEVICES=7,
 ######################
 
 
@@ -22,13 +22,13 @@ SCRIPT="${ACCELERATE_DIR}/scripts/train_cond_mlm.py"
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="test-stage1-conditioning"
+RUN_NAME="test-stage1-bit"
 ####################
 
 ###################
 ### Config file ###
 ###################
-config_file=$ACCELERATE_DIR/configs/cond_gen/cond_generator_10bit_4lvl.yaml
+config_file=$ACCELERATE_DIR/configs/cond_gen/cond_bit_generator_10bit_4lvl.yaml
 ###################
 
 ####################

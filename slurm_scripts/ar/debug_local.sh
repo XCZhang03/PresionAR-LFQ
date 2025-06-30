@@ -22,7 +22,7 @@ SCRIPT="${ACCELERATE_DIR}/scripts/train_ar.py"
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="test-stage1-new_ckpt"
+RUN_NAME="test-stage1-bit"
 ####################
 
 ###################
@@ -61,6 +61,7 @@ SCRIPT_ARGS="
     model.cond_model.num_steps=2 \
     model.base_model.num_steps=2 \
     model.ar_model.stage_0_model_checkpoint=${stage_0_model_checkpoint} \
+    model.cond_model.model_cls=cond_lfq_bert \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly
