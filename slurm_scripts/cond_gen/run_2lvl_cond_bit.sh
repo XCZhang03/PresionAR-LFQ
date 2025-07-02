@@ -76,8 +76,8 @@ srun bash -c "
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_cond_mlm.py \
     config=$config_file \
-    training.per_gpu_batch_size=64 \
-    training.gradient_accumulation_steps=1 \
+    training.per_gpu_batch_size=32 \
+    training.gradient_accumulation_steps=2 \
     experiment.eval_gen_every=20_000 \
     experiment.eval_loss_every=10_000 \
     experiment.resume=true \
