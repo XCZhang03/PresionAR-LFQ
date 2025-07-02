@@ -98,7 +98,7 @@ class ResidualLFQ(torch.nn.Module):
             num_levels = [num_levels] * bs
         assert isinstance(num_levels, list)
         assert len(num_levels) == bs
-        assert all([(num_levels[ind] <= self.num_quantizers and num_levels[ind] >= 1) for ind in range(bs)])
+        assert all([(num_levels[ind] <= self.num_quantizers and num_levels[ind] >= 0) for ind in range(bs)])
 
         if loss_weight is None:
             loss_weight = [1] * self.num_quantizers  
@@ -131,6 +131,12 @@ class ResidualLFQ(torch.nn.Module):
 
         ## STE estimator?
         quantized_out = z + (quantized_out - z).detach()
+
+        ## zero out the gradients with zero levels
+        mask = torch.zeros(bs, dtype=torch.bool).to(z.device)
+        for b in range(bs):
+            mask[b] = num_levels[b] > 0
+        quantized_out = quantized_out * mask.view(bs, *((1,) * (len(z.shape) - 1)))
 
         return quantized_out, all_result_dict
     
