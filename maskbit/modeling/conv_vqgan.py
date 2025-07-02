@@ -150,3 +150,92 @@ class ConvVQModel(BaseModel):
                 result_dict["codebook_loss"] *= 0
             result_dict["entropy_loss"] *= 0
         return z_quantized, result_dict
+    
+from modeling.quantizer import ResidualVQ, ResidualLFQ
+from modeling.modules.autoencoder import ResidualStage
+from typing import List, Union
+def choose_residual_vector_quantizer_class(config):
+    if config.residual_quantizer_type == "residual_lfq":
+        return ResidualLFQ(
+            config.token_size,
+            config.num_quantizers - 1,
+            config.variants,
+            config.scales,
+            config.commitment_cost,
+            config.entropy_loss_weight,
+            config.entropy_loss_temperature,
+            config.entropy_gamma,
+        )
+    elif config.quantizer_type == "residual_vq":
+        return ResidualVQ(
+            config.codebook_size,
+            config.token_size,
+            config.num_quantizers - 1,
+            config.commitment_cost,
+            config.entropy_loss_weight,
+            config.entropy_loss_temperature,
+            config.entropy_gamma,
+            config.get("input_strides", 1),
+            config.get("shared_codebook", False),
+            config.get("use_l2_normalisation", False),
+        )
+
+
+class FTConvVQModel(ConvVQModel):
+    def __init__(self, config, legacy = False, finetune_decoder: bool = True):
+        super().__init__(config, legacy, finetune_decoder=True)
+        self.residual_quantize = choose_residual_vector_quantizer_class(self.config)
+        if config.pre_conv:
+            self.pre_conv = ResidualStage(config.token_size, config.token_size, config.num_res_blocks)
+        else:
+            self.pre_conv = None
+        
+
+    def encode(self, x: torch.Tensor, num_levels: Union[List,int]=None, loss_weight: List[int]=None) -> Tuple[torch.Tensor, Mapping[Text, torch.Tensor]]:
+        """ Encodes the input tensor, i.e. runs the encoder.
+
+        Args:
+            x -> torch.Tensor: The input tensor.
+            num_levels -> int: The levels of quantization precision.
+
+        Returns:
+            z_quantized -> torch.Tensor: The quantized latent representation.
+            result_dict -> Mapping[Text, torch.Tensor]: A dictionary containing additional results
+                and losses from the quantizer.
+        """
+        z = self.encoder(x)
+        if self.pre_conv is not None:
+            z = self.pre_conv(z)
+        z_quantized, result_dict = self.quantize(z)
+        if isinstance(num_levels, List):
+            num_levels = [i - 1 for i in num_levels]
+        elif isinstance(num_levels, int):
+            num_levels = num_levels - 1
+        residual = z - z_quantized
+        res_quantized, res_result_dict = self.residual_quantize(residual, num_levels=num_levels, loss_weight=loss_weight)
+        if isinstance(res_result_dict['min_encoding_indices'], torch.Tensor):
+            res_result_dict['min_encoding_indices'] = torch.cat([result_dict['min_encoding_indices'].unsqueeze(0), res_result_dict['min_encoding_indices']], dim=0)
+        elif isinstance(res_result_dict['min_encoding_indices'], List):
+            res_result_dict['min_encoding_indices'] = [result_dict['min_encoding_indices']] + res_result_dict['min_encoding_indices']
+        else:
+            raise ValueError("Unknown type of min_encoding_indices")
+        
+        return z_quantized, res_result_dict
+        
+    def get_codebook_entry(self, tokens: torch.Tensor, num_level: int=None) -> torch.Tensor:
+        """ Gets the codebook entry for the given tokens.
+
+        Args:
+            tokens -> torch.Tensor: The token indices. shape: (n, b, h, w) or (n, b, h*w)
+
+        Returns:
+            z_quantized -> torch.Tensor: The quantized latent representation.
+        """
+        ## TODO
+        residual_tokens = tokens[1:]
+        if num_level > 0 or num_level is None:
+            res_quantized = self.quantize.get_codebook_entry(residual_tokens, num_level=num_level)
+        ss = int(math.sqrt(float(res_quantized.size(1)))) if len(res_quantized.shape) <= 3 else int(res_quantized.size(1))
+        res_quantized = res_quantized.reshape(res_quantized.size(0), ss, ss, -1)
+        res_quantized = rearrange(res_quantized, 'b h w c -> b c h w').contiguous()
+        return res_quantized

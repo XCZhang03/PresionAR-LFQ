@@ -83,7 +83,7 @@ srun bash -c "
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
-    training.mixed_precision="bf16" \
+    training.mixed_precision="no" \
     model.mlm_model.num_steps=4 \
     model.mlm_model.depth=20 \
     model.mlm_model.hidden_dim=768 \
