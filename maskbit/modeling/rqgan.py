@@ -70,6 +70,7 @@ class RQModel(BaseModel):
         self.quantize = choose_vector_quantizer_class(self.config)
 
         self.codebook_size = [q.codebook_size for q in self.quantize.quantizers]
+        self.num_quantizers = self.quantize.num_quantizers
 
     def get_last_layer(self):
         return self.decoder.conv_out.weight

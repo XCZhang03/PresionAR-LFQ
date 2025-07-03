@@ -125,8 +125,7 @@ class ResidualLFQ(torch.nn.Module):
         all_result_dict["quantizer_loss"] = (all_result_dict["quantizer_loss"] * loss_weight).sum(dim=0)
         all_result_dict["commitment_loss"] = (all_result_dict["commitment_loss"] * loss_weight).sum(dim=0)
         all_result_dict["entropy_loss"] = (all_result_dict["entropy_loss"] * loss_weight).sum(dim=0)
-        # ## debug the gradient
-        # grad = torch.autograd.grad(quantized_out.sum(), z, create_graph=True)[0]
+       
 
 
         ## STE estimator?
@@ -137,6 +136,9 @@ class ResidualLFQ(torch.nn.Module):
         for b in range(bs):
             mask[b] = num_levels[b] > 0
         quantized_out = quantized_out * mask.view(bs, *((1,) * (len(z.shape) - 1)))
+
+        # ## debug the gradient
+        # grad = torch.autograd.grad(quantized_out.sum(), z, create_graph=True)[0]
 
         return quantized_out, all_result_dict
     
@@ -168,7 +170,7 @@ class ResidualLFQ(torch.nn.Module):
 if __name__ == "__main__":
     quantizer = ResidualLFQ(num_quantizers=3, variants=[2,3,3], scales=4)
     z = torch.randn(3, 10, 32, 32).requires_grad_()
-    quantized, outputs = quantizer(z, num_levels=3, loss_weight=[2,1,1])
+    quantized, outputs = quantizer(z, num_levels=[0,1,2], loss_weight=[2,1,1])
     for key, value in outputs.items():
         print(key, value.shape)
     z_3 = quantizer.get_codebook_entry(outputs['min_encoding_indices'][2], num_level=2)

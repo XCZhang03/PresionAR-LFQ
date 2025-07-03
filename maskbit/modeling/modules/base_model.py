@@ -129,7 +129,7 @@ class BaseModel(torch.nn.Module):
 
             checkpoint = new_checkpoint
 
-        self.load_state_dict(checkpoint, strict=strict_loading)
+        keys = self.load_state_dict(checkpoint, strict=strict_loading)
 
         if torch_dtype is not None and not isinstance(torch_dtype, torch.dtype):
             raise ValueError(
@@ -141,6 +141,7 @@ class BaseModel(torch.nn.Module):
         # Set model in evaluation mode to deactivate DropOut modules by default
         self.eval()
 
+        return keys
 
     @property
     def device(self):
