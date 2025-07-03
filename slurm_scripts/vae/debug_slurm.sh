@@ -38,7 +38,7 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="2level-large_batch"
+RUN_NAME="test-ft-vae"
 ####################
 
 srun bash -c "
@@ -50,8 +50,8 @@ srun bash -c "
     --main_process_ip $head_node_ip \
     --main_process_port 29500 \
     --machine_rank $SLURM_PROCID \
-    $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
-    config=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_2lvl.yaml \
+    $ACCELERATE_DIR/scripts/ft_res_tokenizer.py \
+    config=$ACCELERATE_DIR/configs/tokenizer/ft_maskbit_tokenizer_10bit_2lvl.yaml \
     training.per_gpu_batch_size=8 \
     training.gradient_accumulation_steps=1 \
     experiment.save_every=100 \
@@ -59,6 +59,7 @@ srun bash -c "
     experiment.eval_every=400 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
+    experiment.vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/ckpts/maskbit_tokenizer_10bit.bin \
     "
 
 
