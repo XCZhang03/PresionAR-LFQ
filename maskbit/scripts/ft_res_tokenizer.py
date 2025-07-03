@@ -660,7 +660,7 @@ def generate_images(model, original_images, fnames, accelerator, global_step, ou
         dtype = torch.bfloat16
 
     with torch.autocast("cuda", dtype=dtype, enabled=accelerator.mixed_precision != "no"):
-        enc_tokens, _  = accelerator.unwrap_model(model).encode(original_images, num_levels=1)
+        enc_tokens, _  = accelerator.unwrap_model(model).encode(original_images)
 
     reconstructed_images = accelerator.unwrap_model(model).decode(enc_tokens)
     model.train()
