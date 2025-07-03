@@ -43,13 +43,6 @@ RUN_NAME="test-ft-vae"
 
 srun bash -c "
     accelerate launch \
-    --multi_gpu \
-    --rdzv_backend c10d \
-    --num_processes $NUM_PROCESSES \
-    --num_machines $NNODES \
-    --main_process_ip $head_node_ip \
-    --main_process_port 29500 \
-    --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/ft_res_tokenizer.py \
     config=$ACCELERATE_DIR/configs/tokenizer/ft_maskbit_tokenizer_10bit_2lvl.yaml \
     training.per_gpu_batch_size=8 \
