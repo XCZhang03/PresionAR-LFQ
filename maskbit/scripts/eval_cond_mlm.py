@@ -134,7 +134,7 @@ def main(
                 device, memory_format=torch.contiguous_format, non_blocking=True
             )
             context, encoder_dict = tokenizer_model.encode(images, num_levels=config.model.mlm_model.stage)
-            generated_samples = conditional_sample(
+            generated_samples, _ = conditional_sample(
                 generator_model,
                 tokenizer_model,
                 context=context,
