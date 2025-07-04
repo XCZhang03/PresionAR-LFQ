@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=eval-vae-2lvl
+#SBATCH --job-name=eval-cond-2lvl
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -11,7 +11,7 @@
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=16           # number of CPU cores per task
 #SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:1                # number of GPUs per node
-#SBATCH -t 0-01:00                  # maximum execution time (HH:MM:SS)
+#SBATCH -t 0-02:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 #SBATCH --account=kempner_sham_lab
 
@@ -72,7 +72,7 @@ srun bash -c "
     experiment.run_name=$RUN_NAME \
     training.per_gpu_batch_size=100 \
     experiment.mlm_checkpoint=$mlm_checkpoint \
-    model.mlm_model.num_steps=4 \
+    model.mlm_model.num_steps=2 \
     model.mlm_model.depth=20 \
     model.mlm_model.hidden_dim=768 \
     model.mlm_model.heads=12 \

@@ -17,24 +17,25 @@ LAUNCHER="accelerate launch \
     --num_machines 1 \
     "
 
-SCRIPT="${ACCELERATE_DIR}/scripts/train_cond_mlm.py"
+SCRIPT="${ACCELERATE_DIR}/scripts/eval_cond_mlm.py"
 
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="test-stage1-bit"
+RUN_NAME="test-eval"
 ####################
 
 ###################
 ### Config file ###
 ###################
-config_file=$ACCELERATE_DIR/configs/cond_gen/cond_bit_generator_10bit_4lvl.yaml
+config_file=$ACCELERATE_DIR/configs/cond_gen/cond_generator_10bit_4lvl.yaml
 ###################
 
 ####################
 ## Tokenizer ckpt ##
 ####################
 vqgan_checkpoint="/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/4lvl-test-loss_weight/archive/checkpoint-200/ema_model"
+mlm_checkpoint="/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/test-stage1-conditioning/checkpoints/checkpoint_0/ema_model"
 ####################
 
 ## change the batch size according to GPU memory
@@ -51,8 +52,9 @@ SCRIPT_ARGS="
     experiment.run_name=${RUN_NAME} \
     experiment.logger=tensorboard \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
+    experiment.mlm_checkpoint=${mlm_checkpoint} \
+    model.mlm_model.num_steps=2 \
     losses.mlm.masked_only=true \
-    model.mlm_model.mask_token_embedding=false \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly
