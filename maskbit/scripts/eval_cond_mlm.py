@@ -138,6 +138,7 @@ def main(
                 generator_model,
                 tokenizer_model,
                 context=context,
+                num_samples=class_tokens.shape[0],
                 labels=class_tokens,
                 **get_sampling_kwargs(config)
             )
