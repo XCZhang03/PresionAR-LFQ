@@ -174,4 +174,5 @@ wandb/
 .vscode/
 debug/
 runs/
-*.pb
+**/*.pb
+maskbit/classify_image_graph_def.pb
