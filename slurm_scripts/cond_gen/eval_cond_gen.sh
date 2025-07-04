@@ -45,7 +45,7 @@ RUN_NAME="2level-eval-cond_gen"
 
 
 srun bash -c "
-    accelerate launch \
+    python \
     $ACCELERATE_DIR/scripts/eval_cond_mlm.py \
     config=$config_file \
     experiment.vqgan_checkpoint=$vqgan_checkpoint \

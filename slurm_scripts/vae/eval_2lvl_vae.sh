@@ -44,7 +44,7 @@ RUN_NAME="2level-eval"
 
 
 srun bash -c "
-    python
+    python \
     $ACCELERATE_DIR/scripts/eval_res_tokenizer.py \
     config=$config_file \
     experiment.vqgan_checkpoint=$checkpoint_path \
