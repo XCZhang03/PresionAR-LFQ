@@ -128,6 +128,8 @@ def main(
         # The computation is done batchwise, hence we need to shuffle everithing to have a good representation per batch.
         for batch in tqdm.tqdm(eval_dataloader, desc="Generating samples", position=0):
             tot_samples += batch["image"].shape[0]
+            if tot_samples > 5000:
+                breakpoint()
             images = batch["image"].to(
                 device, memory_format=torch.contiguous_format, non_blocking=True
             )
