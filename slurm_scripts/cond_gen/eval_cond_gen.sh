@@ -71,6 +71,7 @@ srun bash -c "
     experiment.vqgan_checkpoint=$vqgan_checkpoint \
     experiment.run_name=$RUN_NAME \
     training.per_gpu_batch_size=100 \
+    dataset.params.eval_shards_path_or_url=./shards/val/imagenet-val-0000.tar \
     experiment.mlm_checkpoint=$mlm_checkpoint \
     model.mlm_model.num_steps=2 \
     model.mlm_model.depth=20 \
