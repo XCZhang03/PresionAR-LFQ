@@ -44,6 +44,26 @@ RUN_NAME="2level-eval-cond_gen"
 ####################
 
 
+###################
+## Model args #####
+###################
+# MODEL_ARGS="model.mlm_model.context_conditioning=embed \
+#     model.mlm_model.label_conditioning=concat \
+#     "
+# MODEL_ARGS="model.mlm_model.context_conditioning=concat \
+#     model.mlm_model.label_conditioning=concat \
+#     model.mlm_model.tie_context_pos_embeddings=true \
+#     "
+MODEL_ARGS="model.mlm_model.context_conditioning=adaln \
+    model.mlm_model.label_conditioning=adaln \
+    "
+# MODEL_ARGS="model.mlm_model.context_conditioning=embed \
+#     model.mlm_model.label_conditioning=adaln \
+#     "
+###################
+
+
+
 srun bash -c "
     python \
     $ACCELERATE_DIR/scripts/eval_cond_mlm.py \
@@ -53,6 +73,10 @@ srun bash -c "
     training.per_gpu_batch_size=100 \
     experiment.mlm_checkpoint=$mlm_checkpoint \
     model.mlm_model.num_steps=4 \
+    model.mlm_model.depth=20 \
+    model.mlm_model.hidden_dim=768 \
+    model.mlm_model.heads=12 \
+    ${MODEL_ARGS} \
     "
 
 
