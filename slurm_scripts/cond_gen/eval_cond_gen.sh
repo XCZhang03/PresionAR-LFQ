@@ -21,6 +21,7 @@
 source activateEnvironment.sh
 GPUS_PER_NODE=1
 export LOG_LEVEL=INFO
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 ######################
 
 
