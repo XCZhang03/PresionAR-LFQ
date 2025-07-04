@@ -145,7 +145,7 @@ def main(
             )
             generated_samples = torch.clamp(generated_samples, 0.0, 1.0)
             generated_samples = (generated_samples * 255.0).permute(0, 2, 3, 1).to("cpu", dtype=torch.uint8).numpy()
-            print(f"Generated {generated_samples.shape[0] / tot_samples} samples in this batch.")
+            print(f"Generated {generated_samples.shape[0]} / {tot_samples} samples in this batch.")
             generated_list.append(generated_samples)
         print(f"Generated {tot_samples} samples.")
         # if res == 256:
