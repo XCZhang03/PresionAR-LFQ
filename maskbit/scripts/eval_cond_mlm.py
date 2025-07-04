@@ -137,8 +137,7 @@ def main(
             generated_samples = conditional_sample(
                 generator_model,
                 tokenizer_model,
-                config.model.mlm_model.stage,
-                context,
+                context=context,
                 labels=class_tokens,
                 **get_sampling_kwargs(config)
             )
