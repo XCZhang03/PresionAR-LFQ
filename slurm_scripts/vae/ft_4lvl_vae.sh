@@ -46,7 +46,7 @@ RUN_NAME="ft-4lvl-from_scratch"
 ###################
 ### Config file ###
 ###################
-config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml
+config_file=$ACCELERATE_DIR/configs/tokenizer/ft_maskbit_tokenizer_10bit_4lvl.yaml
 ###################
 
 
@@ -62,7 +62,7 @@ srun bash -c "
     accelerate launch \
     --multi_gpu \
     --num_processes $NUM_PROCESSES \
-    $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
+    $ACCELERATE_DIR/scripts/ft_res_tokenizer.py \
     config=$config_file \
     training.per_gpu_batch_size=32 \
     training.gradient_accumulation_steps=2 \
