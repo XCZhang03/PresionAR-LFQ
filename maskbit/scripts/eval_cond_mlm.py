@@ -205,13 +205,13 @@ def main():
         with open(run_id_file, "w") as f:
             f.write(run_id)
     
-    # wandb.init(
-    #     project=f"eval-{config.experiment.name}",
-    #     name=config.experiment.run_name,
-    #     config=OmegaConf.to_container(config, resolve=True),
-    #     resume="allow",
-    #     id=run_id,
-    # )
+    wandb.init(
+        project=f"eval-{config.experiment.name}",
+        name=config.experiment.run_name,
+        config=OmegaConf.to_container(config, resolve=True),
+        resume="allow",
+        id=run_id,
+    )
 
     logger.info(f"Config:\n{OmegaConf.to_yaml(config)}")
 
