@@ -68,6 +68,7 @@ MODEL_ARGS="model.mlm_model.context_conditioning=embed \
     model.mlm_model.label_conditioning=concat \
     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-embed-concat/archive/checkpoint-400000 \
     optimizer.params.learning_rate=2e-5 \
+    experiment.dont_resume_optimizer=true \
     "
 # MODEL_ARGS="model.mlm_model.context_conditioning=concat \
 #     model.mlm_model.label_conditioning=concat \
