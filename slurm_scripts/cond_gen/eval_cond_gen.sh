@@ -76,7 +76,7 @@ srun bash -c "
     training.per_gpu_batch_size=100 \
     experiment.mlm_checkpoint=$mlm_checkpoint \
     model.mlm_model.num_steps=4 \
-    model.mlm_model.guidance_scale=[5.0,6.0,7.0] \
+    model.mlm_model.guidance_scale=[6.5,7.5] \
     model.mlm_model.depth=20 \
     model.mlm_model.hidden_dim=768 \
     model.mlm_model.heads=12 \
