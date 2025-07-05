@@ -40,9 +40,10 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ### Set run name ###
 ####################
 # RUN_NAME="2lvl-concat-concat"
-RUN_NAME="2lvl-embed-concat"
+# RUN_NAME="2lvl-embed-concat"
 # RUN_NAME="2lvl-adaln-adaln"
 # RUN_NAME="2lvl-embed-adaln"
+RUN_NAME="2lvl-embed-concat-small_lr"
 ####################
 
 ###################
