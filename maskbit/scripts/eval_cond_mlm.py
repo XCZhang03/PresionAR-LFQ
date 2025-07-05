@@ -60,7 +60,7 @@ def eval(
     device: str = "cuda:0",
 ):
     # config = OmegaConf.load(config_file)
-    config = get_config()
+    # config = get_config()
     batchsize = config.training.per_gpu_batch_size
     tokenizer_path = config.experiment.vqgan_checkpoint
     generator_path = config.experiment.mlm_checkpoint
@@ -205,13 +205,13 @@ def main():
         with open(run_id_file, "w") as f:
             f.write(run_id)
     
-    wandb.init(
-        project=f"eval-{config.experiment.name}",
-        name=config.experiment.run_name,
-        config=OmegaConf.to_container(config, resolve=True),
-        resume="allow",
-        id=run_id,
-    )
+    # wandb.init(
+    #     project=f"eval-{config.experiment.name}",
+    #     name=config.experiment.run_name,
+    #     config=OmegaConf.to_container(config, resolve=True),
+    #     resume="allow",
+    #     id=run_id,
+    # )
 
     logger.info(f"Config:\n{OmegaConf.to_yaml(config)}")
 
@@ -230,6 +230,7 @@ def main():
         for i, key in enumerate(keys):
             config_copy.model.mlm_model[key] = values[i]
         logger.info(f"Running eval with {dict(zip(keys, values))}")
+        breakpoint()
         eval_scores = eval(config_copy)
         # wandb.log({**dict(zip(keys, values)), **eval_scores})
         logger.info(f"Eval scores: {eval_scores}")

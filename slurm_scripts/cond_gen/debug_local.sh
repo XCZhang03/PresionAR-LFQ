@@ -53,7 +53,8 @@ SCRIPT_ARGS="
     experiment.logger=tensorboard \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
     experiment.mlm_checkpoint=${mlm_checkpoint} \
-    model.mlm_model.num_steps=2 \
+    model.mlm_model.num_steps=[2,4] \
+    model.mlm_model.guidance_scale=[5.0,6.0,7.0] \
     losses.mlm.masked_only=true \
     "
     
