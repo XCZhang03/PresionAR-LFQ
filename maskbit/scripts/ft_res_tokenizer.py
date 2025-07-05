@@ -344,6 +344,17 @@ def main():
 
     init_checkpoint = False
     if config.experiment.init_checkpoint != '' and os.path.exists(config.experiment.init_checkpoint):
+        resume_lr_scheduler = config.experiment.get("resume_lr_scheduler", True)
+        dont_resume_optimizer = config.experiment.get("dont_resume_optimizer", False)
+        if not resume_lr_scheduler:
+            logger.info("Not resuming the lr scheduler.")
+            accelerator._schedulers = []  # very hacky, but we don't want to resume the lr scheduler
+        if dont_resume_optimizer:
+            logger.info("Not resuming the optimizer.")
+            accelerator._optimizers = []  # very hacky, but we don't want to resume the optimizer
+            grad_scaler = accelerator.scaler
+            accelerator.scaler = None
+
         global_step = load_checkpoint(Path(config.experiment.init_checkpoint), accelerator)
 
         if config.training.use_ema:
@@ -353,7 +364,11 @@ def main():
             #     ema_model.copy_to(model.parameters())
             #     if config.model.vq_model.get("restart_ema", False):
             #         ema_model.set_step(0)
-        
+        if not resume_lr_scheduler:
+            accelerator._schedulers = [lr_scheduler]
+        if dont_resume_optimizer:
+            accelerator._optimizers = [optimizer]
+            accelerator.scaler = grad_scaler
         init_checkpoint = True
 
     if config.experiment.resume:
