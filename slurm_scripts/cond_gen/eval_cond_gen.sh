@@ -42,7 +42,7 @@ config_file=$ACCELERATE_DIR/configs/cond_gen/cond_generator_10bit_2lvl.yaml
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="2level-eval-cond_gen"
+RUN_NAME="2level-eval-cond_gen-concat-concat"
 ####################
 
 
