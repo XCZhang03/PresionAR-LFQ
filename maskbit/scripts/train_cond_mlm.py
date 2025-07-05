@@ -304,6 +304,15 @@ def main():
     global_step = 0
     first_epoch = 0
 
+    init_checkpoint = False
+    if config.experiment.init_checkpoint != '' and os.path.exists(config.experiment.init_checkpoint):
+        global_step = load_checkpoint(Path(config.experiment.init_checkpoint), accelerator)
+
+        if config.training.use_ema:
+            ema_model.set_step(global_step)
+        
+        init_checkpoint = True
+
     if config.experiment.resume:
         accelerator.wait_for_everyone()
         local_ckpt_list = list(glob.glob(os.path.join(output_dir, "checkpoints", "checkpoint*")))
@@ -341,9 +350,14 @@ def main():
                 accelerator._optimizers = [optimizer]
                 accelerator.scaler = grad_scaler
 
+            init_checkpoint = True
+
             first_epoch = global_step // num_update_steps_per_epoch
         elif len(local_ckpt_list) > 1:
             raise ValueError("There should only be one checkpoint folder.")
+
+    if not init_checkpoint:
+        logger.info("Training from scratch.")
 
     codebook_size = config.model.vq_model.codebook_size[config.model.mlm_model.stage]
     splits = config.model.mlm_model.codebook_splits
