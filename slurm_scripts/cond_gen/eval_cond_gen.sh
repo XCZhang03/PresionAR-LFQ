@@ -23,6 +23,7 @@ GPUS_PER_NODE=1
 export LOG_LEVEL=INFO
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 module load cuda
+date_str=$(date +%Y-%m-%d_%H-%M-%S)
 ######################
 
 
@@ -42,7 +43,7 @@ config_file=$ACCELERATE_DIR/configs/cond_gen/cond_generator_10bit_2lvl.yaml
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="2level-eval-cond_gen-concat-concat"
+RUN_NAME="2level-eval-cond_gen-${date_str}"
 ####################
 
 
