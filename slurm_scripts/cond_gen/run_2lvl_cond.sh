@@ -64,6 +64,7 @@ vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-
 ###################
 MODEL_ARGS="model.mlm_model.context_conditioning=embed \
     model.mlm_model.label_conditioning=concat \
+    training.max_train_steps=600_000 \
     "
 # MODEL_ARGS="model.mlm_model.context_conditioning=concat \
 #     model.mlm_model.label_conditioning=concat \
