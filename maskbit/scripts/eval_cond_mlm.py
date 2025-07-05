@@ -230,7 +230,6 @@ def main():
         for i, key in enumerate(keys):
             config_copy.model.mlm_model[key] = values[i]
         logger.info(f"Running eval with {dict(zip(keys, values))}")
-        breakpoint()
         eval_scores = eval(config_copy)
         # wandb.log({**dict(zip(keys, values)), **eval_scores})
         logger.info(f"Eval scores: {eval_scores}")
