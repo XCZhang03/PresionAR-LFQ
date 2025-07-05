@@ -20,6 +20,8 @@ from utils.script_utils import get_model_kwargs, get_sampling_kwargs, get_config
 
 import tensorflow.compat.v1 as tf
 
+import wandb
+
 TRAIN_SET_STATISTICS_256 = "train_imagenet256_stats.npz"
 TRAIN_SET_STATISTICS_512 = "train_imagenet512_stats.npz"
 
@@ -53,7 +55,8 @@ def get_generator(config, generator_path):
     return generator_model
 
 
-def main(
+def eval(
+    config,
     device: str = "cuda:0",
 ):
     # config = OmegaConf.load(config_file)
@@ -183,6 +186,55 @@ def main(
     pprint.pprint(eval_scores)
     return eval_scores
 
+def main():
+    from utils.logger import setup_logger
+
+    config = get_config()
+    work_dir = os.environ.get('WORKSPACE', './runs')
+    output_dir = os.path.join(work_dir, "outputs", config.experiment.name, config.experiment.run_name)
+
+    logger = setup_logger(name="eval_cond_mlm", log_level="INFO", output_dir=output_dir, use_accelerate=False)
+
+    import uuid
+    run_id_file = os.path.join(output_dir, "wandb_run_id.txt")
+    if os.path.exists(run_id_file):
+        with open(run_id_file, "r") as f:
+            run_id = f.read().strip()
+    else:
+        run_id = str(uuid.uuid4())
+        with open(run_id_file, "w") as f:
+            f.write(run_id)
+    
+    wandb.init(
+        project=f"eval-{config.experiment.name}",
+        name=config.experiment.run_name,
+        config=OmegaConf.to_container(config, resolve=True),
+        resume="allow",
+        id=run_id,
+    )
+
+    logger.info(f"Config:\n{OmegaConf.to_yaml(config)}")
+
+    keys = ["num_steps", "guidance_scale"]
+
+    from copy import deepcopy
+    from collections.abc import Iterable
+    from itertools import product
+    for key in keys:
+        if not isinstance(config.model.mlm_model.get(key, None), Iterable):
+            config.model.mlm_model[key] = [config.model.mlm_model[key]]
+    # Get all combinations of values for the keys
+    values_list = [config.model.mlm_model[key] for key in keys]
+    for values in product(*values_list):
+        config_copy = deepcopy(config)
+        for i, key in enumerate(keys):
+            config_copy.model.mlm_model[key] = values[i]
+        logger.info(f"Running eval with {dict(zip(keys, values))}")
+        eval_scores = eval(config_copy)
+        # wandb.log({**dict(zip(keys, values)), **eval_scores})
+        logger.info(f"Eval scores: {eval_scores}")
+    
+    
 
 
 if __name__ == "__main__":
