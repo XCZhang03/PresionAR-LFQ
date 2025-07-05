@@ -305,7 +305,7 @@ def main():
     first_epoch = 0
 
     init_checkpoint = False
-    if config.experiment.init_checkpoint != '' and os.path.exists(config.experiment.init_checkpoint):
+    if config.experiment.get("init_checkpoint", None) is not None and config.experiment.init_checkpoint != '' and os.path.exists(config.experiment.init_checkpoint):
         resume_lr_scheduler = config.experiment.get("resume_lr_scheduler", True)
         dont_resume_optimizer = config.experiment.get("dont_resume_optimizer", False)
         if not resume_lr_scheduler:
