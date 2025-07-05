@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=bit-concat-2lvl
+#SBATCH --job-name=bit-adaln-2lvl
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -39,7 +39,7 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="2lvl-bit-mask_token-concat"
+RUN_NAME="2lvl-bit-mask_token-adaln"
 ####################
 
 ###################
@@ -61,7 +61,7 @@ vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-
 ###################
 MODEL_ARGS="model.mlm_model.mask_token_embedding=true \
     model.mlm_model.mask_pos_embedding=false \
-    model.mlm_model.label_conditioning=concat \
+    model.mlm_model.label_conditioning=adaln \
     "
 ###################
 
