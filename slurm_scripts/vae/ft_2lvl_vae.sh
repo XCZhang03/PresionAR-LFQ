@@ -39,7 +39,7 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="ft-2lvl-from_scratch"
+RUN_NAME="ft-2lvl-small_lr"
 ####################
 
 
@@ -55,7 +55,8 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/ft_maskbit_tokenizer_10bit_2lvl.ya
 ###################
 MODEL_ARGS="model.vq_model.schedule_type=uniform \
     losses.discriminator_start=2000 \
-    training.max_train_steps=400_000 \
+    optimizer.params.learning_rate=2e-5 \
+    init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/ft-2lvl-from_scratch/archive/checkpoint-100000 \
     "
 ###################
 
