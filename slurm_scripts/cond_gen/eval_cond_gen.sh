@@ -30,7 +30,7 @@ module load cuda
 #### checkpoint #######
 #######################
 vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-mixed_from_scratch-long/archive/checkpoint-800000/ema_model
-mlm_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-adaln-adaln/archive/checkpoint-300000/ema_model
+mlm_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-concat-concat/archive/checkpoint-300000/ema_model
 #######################
 
 ###################
@@ -52,13 +52,13 @@ RUN_NAME="2level-eval-cond_gen"
 # MODEL_ARGS="model.mlm_model.context_conditioning=embed \
 #     model.mlm_model.label_conditioning=concat \
 #     "
-# MODEL_ARGS="model.mlm_model.context_conditioning=concat \
-#     model.mlm_model.label_conditioning=concat \
-#     model.mlm_model.tie_context_pos_embeddings=true \
-#     "
-MODEL_ARGS="model.mlm_model.context_conditioning=adaln \
-    model.mlm_model.label_conditioning=adaln \
+MODEL_ARGS="model.mlm_model.context_conditioning=concat \
+    model.mlm_model.label_conditioning=concat \
+    model.mlm_model.tie_context_pos_embeddings=true \
     "
+# MODEL_ARGS="model.mlm_model.context_conditioning=adaln \
+#     model.mlm_model.label_conditioning=adaln \
+#     "
 # MODEL_ARGS="model.mlm_model.context_conditioning=embed \
 #     model.mlm_model.label_conditioning=adaln \
 #     "
