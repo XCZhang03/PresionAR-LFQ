@@ -38,6 +38,8 @@ SCRIPT_ARGS="
     experiment.eval_every=100 \
     experiment.run_name=${RUN_NAME} \
     experiment.logger=tensorboard \
+    optimizer.params.learning_rate=5e-5 \
+    optimizer.params.discriminator_learning_rate=2e-5 \
     experiment.vqgan_checkpoint=/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-LFQ/maskbit/maskbit_tokenizer_10bit.bin \
     "
     
