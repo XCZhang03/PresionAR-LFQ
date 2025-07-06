@@ -54,15 +54,15 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/ft_maskbit_tokenizer_10bit_2lvl.ya
 ###################
 ## Model args #####
 ###################
-MODEL_ARGS="model.vq_model.schedule_type=uniform"
-# MODEL_ARGS="model.vq_model.schedule_type=uniform \
-#     losses.discriminator_start=2000 \
-#     optimizer.params.learning_rate=5e-5 \
-#     optimizer.params.discriminator_learning_rate=2e-5 \
-#     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/ft-2lvl-from_scratch/archive/checkpoint-100000 \
-#     experiment.dont_resume_optimizer=true \
-#     experiment.resume_lr_scheduler=false \
-#     "
+# MODEL_ARGS="model.vq_model.schedule_type=uniform"
+MODEL_ARGS="model.vq_model.schedule_type=uniform \
+    losses.discriminator_start=2000 \
+    optimizer.params.learning_rate=5e-5 \
+    optimizer.params.discriminator_learning_rate=2e-5 \
+    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/ft-2lvl-from_scratch/archive/checkpoint-100000 \
+    experiment.dont_resume_optimizer=true \
+    experiment.resume_lr_scheduler=false \
+    "
 ###################
 
 srun bash -c "
