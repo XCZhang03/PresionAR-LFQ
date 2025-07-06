@@ -365,9 +365,9 @@ def main():
             #     if config.model.vq_model.get("restart_ema", False):
             #         ema_model.set_step(0)
         if not resume_lr_scheduler:
-            accelerator._schedulers = [lr_scheduler]
+            accelerator._schedulers = [lr_scheduler, discriminator_lr_scheduler]
         if dont_resume_optimizer:
-            accelerator._optimizers = [optimizer]
+            accelerator._optimizers = [optimizer, discriminator_optimizer]
             accelerator.scaler = grad_scaler
         init_checkpoint = True
 
@@ -384,17 +384,16 @@ def main():
                 checkpoint_paths = sorted(local_ckpt_list, key=fn, reverse=True)
             else:  # len(local_ckpt_list) == 1
                 checkpoint_paths = local_ckpt_list
-            
-            resume_lr_scheduler = config.experiment.get("resume_lr_scheduler", True)
-            dont_resume_optimizer = config.experiment.get("dont_resume_optimizer", False)
-            if not resume_lr_scheduler:
-                logger.info("Not resuming the lr scheduler.")
-                accelerator._schedulers = []  # very hacky, but we don't want to resume the lr scheduler
-            if dont_resume_optimizer:
-                logger.info("Not resuming the optimizer.")
-                accelerator._optimizers = []  # very hacky, but we don't want to resume the optimizer
-                grad_scaler = accelerator.scaler
-                accelerator.scaler = None
+            # resume_lr_scheduler = config.experiment.get("resume_lr_scheduler", True)
+            # dont_resume_optimizer = config.experiment.get("dont_resume_optimizer", False)
+            # if not resume_lr_scheduler:
+            #     logger.info("Not resuming the lr scheduler.")
+            #     accelerator._schedulers = []  # very hacky, but we don't want to resume the lr scheduler
+            # if dont_resume_optimizer:
+            #     logger.info("Not resuming the optimizer.")
+            #     accelerator._optimizers = []  # very hacky, but we don't want to resume the optimizer
+            #     grad_scaler = accelerator.scaler
+            #     accelerator.scaler = None
 
             global_step = load_checkpoint(
                 Path(checkpoint_paths[0]),
@@ -402,11 +401,11 @@ def main():
             )
             if config.training.use_ema:
                 ema_model.set_step(global_step)
-            if not resume_lr_scheduler:
-                accelerator._schedulers = [lr_scheduler]
-            if dont_resume_optimizer:
-                accelerator._optimizers = [optimizer]
-                accelerator.scaler = grad_scaler
+            # if not resume_lr_scheduler:
+            #     accelerator._schedulers = [lr_scheduler]
+            # if dont_resume_optimizer:
+            #     accelerator._optimizers = [optimizer]
+            #     accelerator.scaler = grad_scaler
 
             first_epoch = global_step // num_update_steps_per_epoch
 
