@@ -32,7 +32,8 @@ date_str=$(date +%Y-%m-%d_%H-%M-%S)
 #######################
 vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-mixed_from_scratch-long/archive/checkpoint-800000/ema_model
 # mlm_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-concat-concat/archive/checkpoint-300000/ema_model
-mlm_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-adaln-adaln/archive/checkpoint-300000/ema_model
+# mlm_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-adaln-adaln/archive/checkpoint-300000/ema_model
+mlm_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-embed-concat/archive/checkpoint-400000/ema_model
 #######################
 
 ###################
@@ -51,16 +52,16 @@ RUN_NAME="2level-eval-cond_gen-${date_str}"
 ###################
 ## Model args #####
 ###################
-# MODEL_ARGS="model.mlm_model.context_conditioning=embed \
-#     model.mlm_model.label_conditioning=concat \
-#     "
+MODEL_ARGS="model.mlm_model.context_conditioning=embed \
+    model.mlm_model.label_conditioning=concat \
+    "
 # MODEL_ARGS="model.mlm_model.context_conditioning=concat \
 #     model.mlm_model.label_conditioning=concat \
 #     model.mlm_model.tie_context_pos_embeddings=true \
 #     "
-MODEL_ARGS="model.mlm_model.context_conditioning=adaln \
-    model.mlm_model.label_conditioning=adaln \
-    "
+# MODEL_ARGS="model.mlm_model.context_conditioning=adaln \
+#     model.mlm_model.label_conditioning=adaln \
+#     "
 # MODEL_ARGS="model.mlm_model.context_conditioning=embed \
 #     model.mlm_model.label_conditioning=adaln \
 #     "
@@ -77,7 +78,7 @@ srun bash -c "
     training.per_gpu_batch_size=100 \
     experiment.mlm_checkpoint=$mlm_checkpoint \
     model.mlm_model.num_steps=[4,8,16] \
-    model.mlm_model.guidance_scale=[6.5] \
+    model.mlm_model.guidance_scale=[6.5,7.5,8.5] \
     model.mlm_model.depth=20 \
     model.mlm_model.hidden_dim=768 \
     model.mlm_model.heads=12 \
