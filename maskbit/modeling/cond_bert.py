@@ -410,7 +410,7 @@ if __name__ == "__main__":
         stage=stage,
         img_size=256,
         variants=3,
-        codebook_splits=1,
+        codebook_splits=2,
         scales=None,
         input_stride=16,
         token_size=10,
@@ -425,8 +425,8 @@ if __name__ == "__main__":
         fused_if_available=True,
         label_conditioning="concat",
         num_classes=1000,
-        mask_token=False,
-        mask_pos_embedding=True,
+        mask_token_embedding=True,
+        mask_pos_embedding=False,
     ).to(device=device, dtype=dtype)
     print(model)
     print(f"Model parameters: {model.num_parameters() / 1e6:.2f}M")
@@ -447,6 +447,10 @@ if __name__ == "__main__":
         bits=model.token_size,
         variants=model.variants
     )
+    tokens = model.preprocess_tokens(token_indices)
+    decoded_tokens = vae.get_codebook_entry(result_dict['min_encoding_indices'][stage], num_level=stage).permute(0, 2, 3, 1).contiguous()
+    decoded_tokens = rearrange(decoded_tokens, 'b h w d -> b (h w) d')
+    assert (decoded_tokens == tokens[0]).all(), "Decoded tokens do not match the preprocessed tokens"
     class_labels = torch.randint(0, 1000, (2,)).to(device)
     drop_label_mask = torch.zeros(2, dtype=torch.bool).to(device)
     from modeling.modules.masking import get_mask_tokens
