@@ -7,8 +7,8 @@ cd $ACCELERATE_DIR
 ######################
 ### Set GPUs #########
 ######################
-GPUS_PER_NODE=1
-export CUDA_VISIBLE_DEVICES=7,
+GPUS_PER_NODE=2
+export CUDA_VISIBLE_DEVICES=6,7
 ######################
 
 
@@ -17,12 +17,12 @@ LAUNCHER="accelerate launch \
     --num_machines 1 \
     "
 
-SCRIPT="${ACCELERATE_DIR}/scripts/eval_cond_mlm.py"
+SCRIPT="${ACCELERATE_DIR}/scripts/train_cond_mlm.py"
 
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="test-eval"
+RUN_NAME="test-control"
 ####################
 
 ###################
@@ -35,13 +35,12 @@ config_file=$ACCELERATE_DIR/configs/cond_gen/cond_generator_10bit_4lvl.yaml
 ## Tokenizer ckpt ##
 ####################
 vqgan_checkpoint="/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/4lvl-test-loss_weight/archive/checkpoint-200/ema_model"
-mlm_checkpoint="/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/test-stage1-conditioning/checkpoints/checkpoint_0/ema_model"
 ####################
 
 ## change the batch size according to GPU memory
 SCRIPT_ARGS="
     config=${config_file} \
-    training.per_gpu_batch_size=32 \
+    training.per_gpu_batch_size=4 \
     training.gradient_accumulation_steps=1 \
     dataset.params.train_shards_path_or_url=./shards/train/imagenet-train-{0000..0008}.tar \
     dataset.params.eval_shards_path_or_url=./shards/val/imagenet-val-0000.tar \
@@ -52,10 +51,8 @@ SCRIPT_ARGS="
     experiment.run_name=${RUN_NAME} \
     experiment.logger=tensorboard \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
-    experiment.mlm_checkpoint=${mlm_checkpoint} \
-    model.mlm_model.num_steps=[2,4] \
-    model.mlm_model.guidance_scale=[5.0,6.0,7.0] \
-    losses.mlm.masked_only=true \
+    model.mlm_model.context_conditioning=control \
+    model.mlm_model.label_conditioning=adaln \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly

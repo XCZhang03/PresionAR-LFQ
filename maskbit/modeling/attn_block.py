@@ -291,10 +291,10 @@ class ControlAttnBlock(nn.Module):
         x = x + self.drop_path(self.attn_x(self.norm1(x).mul(scale1.add(1)).add_(shift1), attn_bias=attn_bias).mul_(gamma1))
         context = context + self.drop_path(self.attn_c(self.norm1(context).mul(scale1.add(1)).add_(shift1), attn_bias=attn_bias).mul_(gamma1))
 
-        x[:, :context.shape[1], :] = x[:, :context.shape[1], :] + context   ## control net style conditioning
-        
         x = x + self.drop_path(self.ffn_x(self.norm2(x).mul(scale2.add(1)).add_(shift2)).mul_(gamma2))
         context = context + self.drop_path(self.ffn_c(self.norm2(context).mul(scale2.add(1)).add_(shift2)).mul_(gamma2))
+        
+        x[:, :context.shape[1], :] = x[:, :context.shape[1], :] + context   ## control net style conditioning
         
         return x, context
 
