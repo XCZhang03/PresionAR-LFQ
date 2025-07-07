@@ -637,6 +637,7 @@ def eval_loss(
     loss_average_m = AverageMeter()
     accuracy_m = AverageMeter()
     masked_accuracy_m = AverageMeter()
+    masked_loss_m = AverageMeter()
 
     for batch in tqdm.tqdm(eval_loader):
         images = batch["image"].to(
@@ -665,11 +666,13 @@ def eval_loss(
         loss_average_m.update(loss_dict['mlm_loss'].item())
         accuracy_m.update(loss_dict['correct_tokens'].item())
         masked_accuracy_m.update(loss_dict['masked_correct_tokens'].item())
+        masked_loss_m.update(loss_dict['masked_token_loss'].item())
 
     return {
         "loss": loss_average_m.avg,
         "accuracy": accuracy_m.avg,
         "masked_accuracy": masked_accuracy_m.avg,
+        "masked_loss": masked_loss_m.avg,
     }
 
 
