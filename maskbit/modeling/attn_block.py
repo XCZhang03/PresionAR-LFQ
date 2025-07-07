@@ -268,8 +268,8 @@ class ControlAttnBlock(nn.Module):
             embed_dim=embed_dim, num_heads=num_heads, attn_drop=attn_drop, proj_drop=proj_drop, 
             attn_l2_norm=attn_l2_norm, flash_if_available=flash_if_available
         )
-        self.ffn_x = self.ffn = FeedForward(in_features=embed_dim, hidden_features=round(embed_dim * mlp_ratio), drop=proj_drop, fused_if_available=fused_if_available)
-        self.ffn_c = self.ffn = FeedForward(in_features=embed_dim, hidden_features=round(embed_dim * mlp_ratio), drop=proj_drop, fused_if_available=fused_if_available)
+        self.ffn_x = FeedForward(in_features=embed_dim, hidden_features=round(embed_dim * mlp_ratio), drop=proj_drop, fused_if_available=fused_if_available)
+        self.ffn_c = FeedForward(in_features=embed_dim, hidden_features=round(embed_dim * mlp_ratio), drop=proj_drop, fused_if_available=fused_if_available)
         self.norm1 = nn.LayerNorm(embed_dim, elementwise_affine=False, eps=1e-6)
         self.norm2 = nn.LayerNorm(embed_dim, elementwise_affine=False, eps=1e-6)
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
