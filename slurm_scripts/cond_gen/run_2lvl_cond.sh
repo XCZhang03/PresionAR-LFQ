@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=control-adaln-2lvl
+#SBATCH --job-name=embed-concat-2lvl
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -40,12 +40,12 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ### Set run name ###
 ####################
 # RUN_NAME="2lvl-concat-concat"
-# RUN_NAME="2lvl-embed-concat"
+RUN_NAME="2lvl-embed-concat"
 # RUN_NAME="2lvl-adaln-adaln"
 # RUN_NAME="2lvl-embed-adaln"
 # RUN_NAME="2lvl-embed-concat-small_lr"
 # RUN_NAME="2lvl-adaln-adaln-small_lr"
-RUN_NAME="2lvl-control-adaln"
+# RUN_NAME="2lvl-control-adaln"
 # RUN_NAME="2lvl-adaln-adaln-masked_only"
 ####################
 
@@ -66,6 +66,9 @@ vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-
 ###################
 ## Model args #####
 ###################
+MODEL_ARGS="model.mlm_model.context_conditioning=embed \
+    model.mlm_model.label_conditioning=concat \
+    "
 # MODEL_ARGS="model.mlm_model.context_conditioning=embed \
 #     model.mlm_model.label_conditioning=concat \
 #     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-embed-concat/archive/checkpoint-400000 \
@@ -83,9 +86,9 @@ vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-
 # MODEL_ARGS="model.mlm_model.context_conditioning=embed \
 #     model.mlm_model.label_conditioning=adaln \
 #     "
-MODEL_ARGS="model.mlm_model.context_conditioning=control \
-    model.mlm_model.label_conditioning=adaln \
-    "
+# MODEL_ARGS="model.mlm_model.context_conditioning=control \
+#     model.mlm_model.label_conditioning=adaln \
+#     "
 # MODEL_ARGS="model.mlm_model.context_conditioning=adaln \
 #     model.mlm_model.label_conditioning=adaln \
 #     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-adaln-adaln/archive/checkpoint-400000 \
