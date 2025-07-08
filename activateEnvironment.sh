@@ -1,14 +1,14 @@
 ###################
 ### Conda Env #####
 ###################
-source ~/miniconda3/etc/profile.d/conda.sh
+source /n/holylabs/ydu_lab/Lab/zhangxiangcheng/miniconda3/etc/profile.d/conda.sh
 conda activate maskbit
 ###################
 
 ######################
 # Set work dir #######
 ######################
-export ACCELERATE_DIR="/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit"
+export ACCELERATE_DIR="n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit"
 # export ACCELERATE_DIR="/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-LFQ/maskbit"
 cd $ACCELERATE_DIR
 ######################

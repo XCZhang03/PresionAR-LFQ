@@ -176,3 +176,5 @@ debug/
 runs/
 **/*.pb
 maskbit/classify_image_graph_def.pb
+ckpt*/
+status/
