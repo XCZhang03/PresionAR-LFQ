@@ -7,6 +7,7 @@
 #SBATCH --mail-user=504985967@qq.com
 #SBATCH -o status/myoutput_%j.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
+#SBATCH --open-mode=append          # Append to the output and error files
 #SBATCH --nodes=2                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=16           # number of CPU cores per task
