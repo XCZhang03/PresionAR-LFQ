@@ -14,7 +14,7 @@
 #SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:4                # number of GPUs per node
 #SBATCH -t 2-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
-#SBATCH --account=kempner_sham_lab
+#SBATCH --account=kempner_ydu_lab
 
 ######################
 ### Set enviroment ###
