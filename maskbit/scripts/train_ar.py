@@ -680,9 +680,9 @@ def eval_generation(
     ar_model.eval()
     evaluator.reset_metrics()
 
-    eval_bs = 5 
-    tot_samples = 50
-    n_classes = 5
+    eval_bs = 25 
+    tot_samples = 50_000
+    n_classes = 1000
     repeats = int(tot_samples // n_classes)
     num_processes = accelerator.num_processes
     process_index = accelerator.process_index

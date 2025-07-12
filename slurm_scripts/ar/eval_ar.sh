@@ -31,8 +31,8 @@ date_str=$(date +%Y-%m-%d_%H-%M-%S)
 #######################
 #### checkpoint #######
 #######################
-vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/ft-2lvl-xs_lr/checkpoints/checkpoint_69/ema_model
-ar_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/resar_generator_10bit/test-stage0/checkpoints/checkpoint_1/ema_model
+vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/ckpts/maskbit_tokenizer_10bit.bin
+ar_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/resar_generator_10bit/test-stage0/checkpoints/checkpoint_4/ema_model
 #######################
 
 ###################

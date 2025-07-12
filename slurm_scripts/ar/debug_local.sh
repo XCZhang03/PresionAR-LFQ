@@ -5,12 +5,13 @@ source activateEnvironment.sh
 ######################
 ### Set GPUs #########
 ######################
-GPUS_PER_NODE=1
-# export CUDA_VISIBLE_DEVICES=0
+GPUS_PER_NODE=2
+export CUDA_VISIBLE_DEVICES=MIG-36b07b66-40f2-5a66-ab67-c3254c723e8f,MIG-50e60ea6-7c54-5212-8df1-d6c45c908599
 ######################
 
 
 LAUNCHER="accelerate launch \
+    --multi_gpu \
     --num_processes $((1 * GPUS_PER_NODE)) \
     --num_machines 1 \
     "
@@ -32,7 +33,7 @@ config_file=$ACCELERATE_DIR/configs/ar/ar_generator_10bit_2lvl.yaml
 ####################
 ## Tokenizer ckpt ##
 ####################
-vqgan_checkpoint="/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/ft-2lvl-xs_lr/checkpoints/checkpoint_69/ema_model"
+vqgan_checkpoint="/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/ft-2lvl-small_lr/archive/checkpoint-200000/ema_model"
 ####################
 
 
@@ -49,9 +50,10 @@ SCRIPT_ARGS="
     training.gradient_accumulation_steps=1 \
     dataset.params.train_shards_path_or_url=./shards/train/imagenet-train-{0000..0008}.tar \
     dataset.params.eval_shards_path_or_url=./shards/val/imagenet-val-0000.tar \
-    experiment.save_every=100 \
+    experiment.save_every=200 \
     experiment.generate_every=100 \
-    experiment.eval_every=100 \
+    experiment.eval_loss_every=200 \
+    experiment.eval_gen_every=100 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
     experiment.logger=tensorboard \
