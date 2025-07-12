@@ -128,7 +128,7 @@ def main():
 
     # If passed along, set the training seed now.
     if config.training.seed is not None:
-        set_seed(config.training.seed)
+        set_seed(config.training.seed, device_specific=True)
 
     #########################
     # MODELS and OPTIMIZER  #
@@ -564,9 +564,8 @@ def main():
                     eval_scores = eval_generation(
                         ar_model,
                         vqgan_model,
-                        eval_dataloader,
                         evaluator,
-                        config,
+                        accelerator,
                     )
 
                     logger.info(f"EVALUATION Step: {global_step + 1}")
@@ -675,30 +674,44 @@ def eval_loss(
 def eval_generation(
     ar_model,
     vqgan_model,
-    eval_loader,
     evaluator,
-    config,
+    accelerator
 ):
     ar_model.eval()
     evaluator.reset_metrics()
 
-    for batch in tqdm.tqdm(eval_loader):
-        images = batch["image"].to(
-                ar_model.device, memory_format=torch.contiguous_format, non_blocking=True
-            )
-        class_tokens = batch["class_id"].to(
-                ar_model.device, memory_format=torch.contiguous_format, non_blocking=True
-            )
+    eval_bs = 5 
+    tot_samples = 50
+    n_classes = 5
+    repeats = int(tot_samples // n_classes)
+    num_processes = accelerator.num_processes
+    process_index = accelerator.process_index
+    print(f"Process {process_index} of {num_processes} started.")
+    subset_len = int(tot_samples // num_processes)
+    assert subset_len % eval_bs == 0
+
+    all_labels = torch.arange(0, n_classes, device=accelerator.device, dtype=torch.int).repeat(repeats)
+    subset_labels = all_labels[process_index * subset_len: (process_index + 1) * subset_len]
+    num_batches = subset_len // eval_bs
+    subset_labels = subset_labels[torch.randperm(subset_labels.shape[0])]
+
+    num_generated = 0
+    unwrapped_ar_model = accelerator.unwrap_model(ar_model)
+    for batch in tqdm.tqdm(range(num_batches), desc="Generating samples", position=0):
+        class_tokens = subset_labels[batch * eval_bs: (batch + 1) * eval_bs]
         generated_samples, _ = residual_sample(
-            ar_model,
+            unwrapped_ar_model,
             vqgan_model,
             labels=class_tokens,
         )
         
         generated_samples = torch.clamp(generated_samples, 0.0, 1.0)
 
-        evaluator.update(generated_samples)
+        generated_samples = accelerator.gather(generated_samples)
+        num_generated += generated_samples.shape[0]
 
+        evaluator.update(generated_samples)
+    print(f"Generated {num_generated} samples in {num_processes} processes.")
     return evaluator.result()
 
 
@@ -773,9 +786,9 @@ def generate_images(
     logger = get_logger(name="ResAR", log_level="INFO")
     logger.info("Generating images...")
 
-
+    unwrapped_ar_model = accelerator.unwrap_model(ar_model)
     generated_samples, _ = residual_sample(
-        ar_model,
+        unwrapped_ar_model,
         vqgan_model,
         labels=labels,
     )
