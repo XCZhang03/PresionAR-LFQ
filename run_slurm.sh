@@ -43,7 +43,7 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 # RUN_NAME="2level-mixed_from_scratch-long"
 # RUN_NAME="1level-long"
 # RUN_NAME="2level-2variant-from_scratch-long"
-RUN_NAME="2level-large_batch"
+RUN_NAME="2level-large_batch-test"
 ####################
 
 

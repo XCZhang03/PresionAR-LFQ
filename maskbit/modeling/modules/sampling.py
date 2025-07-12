@@ -279,7 +279,6 @@ def conditional_sample(
 def residual_sample(
         model,
         vqgan_model,
-        config, 
         num_samples: int = 10,
         labels: Optional[torch.Tensor] = None,
 ):      

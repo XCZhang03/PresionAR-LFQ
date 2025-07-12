@@ -22,7 +22,8 @@ source activateEnvironment.sh
 GPUS_PER_NODE=1
 export LOG_LEVEL=INFO
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-module load cuda
+module load cuda/12.4.1-fasrc01
+module load cudnn/9.5.1.17_cuda12-fasrc01
 date_str=$(date +%Y-%m-%d_%H-%M-%S)
 ######################
 
@@ -30,10 +31,10 @@ date_str=$(date +%Y-%m-%d_%H-%M-%S)
 #######################
 #### checkpoint #######
 #######################
-vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-mixed_from_scratch-long/archive/checkpoint-800000/ema_model
-# mlm_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-concat-concat/archive/checkpoint-300000/ema_model
-# mlm_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-adaln-adaln/archive/checkpoint-300000/ema_model
-mlm_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-embed-concat/archive/checkpoint-400000/ema_model
+vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-mixed_from_scratch-long/archive/checkpoint-800000/ema_model
+# mlm_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-concat-concat/archive/checkpoint-300000/ema_model
+# mlm_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-adaln-adaln/archive/checkpoint-300000/ema_model
+mlm_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-embed-concat/archive/checkpoint-400000/ema_model
 #######################
 
 ###################

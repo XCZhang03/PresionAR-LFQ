@@ -24,6 +24,7 @@ from utils.logger import setup_logger
 from utils.meter import AverageMeter
 from modeling.modules import EMAModel, MLMLoss, get_mask_tokens, residual_sample, combine_factorized_tokens, split_factorized_tokens
 from modeling.rqgan import RQModel
+from modeling.conv_vqgan import FTConvVQModel
 from modeling.ar import ResAR
 from evaluator import GeneratorEvaluator
 
@@ -133,8 +134,11 @@ def main():
     # MODELS and OPTIMIZER  #
     #########################
     logger.info("Creating model and optimizer")
-
-    vqgan_model = RQModel(config.model.vq_model)
+    tokenizer_cls = {
+        "rqgan": RQModel,
+        "ft-vqgan+": FTConvVQModel,
+    }
+    vqgan_model = tokenizer_cls[config.model.vq_model.model_class](config.model.vq_model)
     config.model.vq_model.codebook_size = vqgan_model.codebook_size
     vqgan_model.load_pretrained(config.experiment.vqgan_checkpoint)
     vqgan_model.eval()
@@ -319,6 +323,30 @@ def main():
     global_step = 0
     first_epoch = 0
 
+    init_checkpoint = False
+    if config.experiment.get("init_checkpoint", None) is not None and config.experiment.init_checkpoint != '' and os.path.exists(config.experiment.init_checkpoint):
+        resume_lr_scheduler = config.experiment.get("resume_lr_scheduler", True)
+        dont_resume_optimizer = config.experiment.get("dont_resume_optimizer", False)
+        if not resume_lr_scheduler:
+            logger.info("Not resuming the lr scheduler.")
+            accelerator._schedulers = []  # very hacky, but we don't want to resume the lr scheduler
+        if dont_resume_optimizer:
+            logger.info("Not resuming the optimizer.")
+            accelerator._optimizers = []  # very hacky, but we don't want to resume the optimizer
+            grad_scaler = accelerator.scaler
+            accelerator.scaler = None
+        global_step = load_checkpoint(Path(config.experiment.init_checkpoint), accelerator)
+
+        if config.training.use_ema:
+            ema_model.set_step(global_step)
+        if not resume_lr_scheduler:
+            accelerator._schedulers = [lr_scheduler]
+        if dont_resume_optimizer:
+            accelerator._optimizers = [optimizer]
+            accelerator.scaler = grad_scaler
+        
+        init_checkpoint = True
+
     if config.experiment.resume:
         accelerator.wait_for_everyone()
         local_ckpt_list = list(glob.glob(os.path.join(output_dir, "checkpoints", "checkpoint*")))
@@ -327,39 +355,28 @@ def main():
                 if not os.path.exists(f"{checkpoint_path}/metadata.json"):
                     logger.warning(f"Checkpoint {checkpoint_path} does not have metadata.json, skipping it.")
                     local_ckpt_list.remove(checkpoint_path)
-            if len(local_ckpt_list) > 1:
-                fn = lambda x: int(x.split('/')[-1].split('_')[-1])
-                checkpoint_paths = sorted(local_ckpt_list, key=fn, reverse=True)
-            else:  # len(local_ckpt_list) == 1
-                checkpoint_paths = local_ckpt_list
-            
-            resume_lr_scheduler = config.experiment.get("resume_lr_scheduler", True)
-            dont_resume_optimizer = config.experiment.get("dont_resume_optimizer", False)
-            if not resume_lr_scheduler:
-                logger.info("Not resuming the lr scheduler.")
-                accelerator._schedulers = []  # very hacky, but we don't want to resume the lr scheduler
-            if dont_resume_optimizer:
-                logger.info("Not resuming the optimizer.")
-                accelerator._optimizers = []  # very hacky, but we don't want to resume the optimizer
-                grad_scaler = accelerator.scaler
-                accelerator.scaler = None
+            if len(local_ckpt_list) >= 1:
+                if len(local_ckpt_list) > 1:
+                    fn = lambda x: int(x.split('/')[-1].split('_')[-1])
+                    checkpoint_paths = sorted(local_ckpt_list, key=fn, reverse=True)
+                else:  # len(local_ckpt_list) == 1
+                    checkpoint_paths = local_ckpt_list
+                
+                global_step = load_checkpoint(
+                    Path(checkpoint_paths[0]),
+                    accelerator
+                )
+                if config.training.use_ema:
+                    ema_model.set_step(global_step)
 
-            global_step = load_checkpoint(
-                Path(checkpoint_paths[0]),
-                accelerator
-            )
-            if config.training.use_ema:
-                ema_model.set_step(global_step)
-            if not resume_lr_scheduler:
-                accelerator._schedulers = [lr_scheduler]
-            if dont_resume_optimizer:
-                accelerator._optimizers = [optimizer]
-                accelerator.scaler = grad_scaler
-
-            first_epoch = global_step // num_update_steps_per_epoch
+                first_epoch = global_step // num_update_steps_per_epoch
+                init_checkpoint = True
+            elif len(local_ckpt_list) == 0:
+                pass
         elif len(local_ckpt_list) > 1:
             raise ValueError("There should only be one checkpoint folder.")
-
+    if not init_checkpoint:
+        logger.info("Training from scratch.")
 
     batch_time_m = AverageMeter()
     data_time_m = AverageMeter()
@@ -675,7 +692,6 @@ def eval_generation(
         generated_samples, _ = residual_sample(
             ar_model,
             vqgan_model,
-            config=config,
             labels=class_tokens,
         )
         
@@ -761,7 +777,6 @@ def generate_images(
     generated_samples, _ = residual_sample(
         ar_model,
         vqgan_model,
-        config=config,
         labels=labels,
     )
     
