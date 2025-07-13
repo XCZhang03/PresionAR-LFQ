@@ -708,6 +708,7 @@ def eval_generation(
         generated_samples = torch.clamp(generated_samples, 0.0, 1.0)
 
         generated_samples = accelerator.gather(generated_samples)
+        accelerator.wait_for_everyone()
         num_generated += generated_samples.shape[0]
 
         evaluator.update(generated_samples)

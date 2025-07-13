@@ -5,7 +5,7 @@ experiment:
     max_train_examples: 1_281_167 # total number of imagenet examples
     save_every: 1_000
     eval_loss_every: 10_000
-    eval_gen_every: 40_000
+    eval_gen_every: 20_000
     generate_every: 10_000
     log_every: 50
     log_grad_norm_every: 100_000
@@ -54,9 +54,9 @@ model:
         attn_l2_norm: True
         context_conditioning: "adaln"
         label_conditioning: "adaln"
-        guidance_scale: 6.4
+        guidance_scale: 7.0
         guidance_annealing: "cosine"
-        num_steps: 16
+        num_steps: 64
         train_mask_schedule_strategy: "arccos"
         gen_mask_schedule_strategy: "arccos"
         softmax_temperature: 1.0
@@ -126,7 +126,7 @@ lr_scheduler:
 
 
 training:
-    gradient_accumulation_steps: 1
+    gradient_accumulation_steps: 2
     per_gpu_batch_size: 32
     mixed_precision: "no"
     enable_tf32: True

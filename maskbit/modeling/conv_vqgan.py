@@ -100,7 +100,7 @@ class ConvVQModel(BaseModel):
         decoded = self.decoder(z_quantized)
         return decoded
 
-    def decode_tokens(self, tokens: torch.Tensor) -> torch.Tensor:
+    def decode_tokens(self, tokens: torch.Tensor, **kwargs) -> torch.Tensor:
         """ Decodes from tokens, i.e. runs the decoder after converting tokens to latent representations.
 
         Args:
