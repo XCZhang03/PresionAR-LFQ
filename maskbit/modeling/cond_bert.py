@@ -64,8 +64,8 @@ class CondBert(BaseModel):
 
         assert context_conditioning in ["control", "cross", "concat", "adaln", "embed", "channel"],  \
             f'context_conditioning must be one of ["control", "cross", "concat", "adaln", "embed"], but got {context_conditioning}'
-        assert label_conditioning in ["adaln", "concat"], \
-            f'label_conditioning must be one of ["adaln", "concat"], but got {label_conditioning}'
+        assert label_conditioning in ["adaln", "concat", "both"], \
+            f'label_conditioning must be one of ["adaln", "concat", "both"], but got {label_conditioning}'
         self.context_conditioning = context_conditioning
         self.label_conditioning = label_conditioning
         self.num_classes = num_classes
@@ -198,13 +198,13 @@ class CondBert(BaseModel):
         else:
             raise ValueError(f'Unknown context_conditioning: {self.context_conditioning}')
 
-        if self.label_conditioning == 'concat':
+        if self.label_conditioning != 'adaln':
             x = torch.cat([x, cls_embedding], dim=1)
 
         x, context = self.transformer(
             x,
             context=context,
-            cond=cls_embedding if self.label_conditioning == 'adaln' else None,
+            cond=cls_embedding if self.label_conditioning != 'concat' else None,
         )
 
         x = x[:, :self.seq_len, :]  

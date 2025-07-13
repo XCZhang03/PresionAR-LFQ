@@ -436,7 +436,7 @@ class CondTransformerEncoder(nn.Module):
                 embed_dim=dim, num_heads=num_heads, attn_drop=attn_drop, proj_drop=proj_drop,
                 drop_path=drop_path_rate[i],
                 attn_l2_norm=attn_l2_norm, flash_if_available=flash_if_available,
-                fused_if_available=fused_if_available, use_ada_ln=(label_conditioning == "adaln"),
+                fused_if_available=fused_if_available, use_ada_ln=(label_conditioning != "concat"),
                 mlp_ratio=mlp_ratio
             ) for i in range(depth)
         ])
@@ -447,7 +447,7 @@ class CondTransformerEncoder(nn.Module):
             assert self.context_conditioning in ['embed', 'concat', 'channel', 'none'], \
                 f'context must be provided when context_conditioning is {self.context_conditioning}'
         if cond is not None:
-            assert self.label_conditioning == "adaln", \
+            assert self.label_conditioning != "concat", \
                 f'cond must be None when label_conditioning is {self.label_conditioning}'
         
         for block in self.blocks:

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=adaln-adaln-ft-ar-2lvl
+#SBATCH --job-name=control-both-ft-ar-2lvl
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -40,7 +40,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="adaln-adaln-2lvl-ft"
+# RUN_NAME="adaln-adaln-2lvl-ft"
+RUN_NAME="control-both-2lvl-ft"
 ####################
 
 ###################
@@ -66,8 +67,11 @@ stage_0_model_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-
 #####################
 ## Model args #######
 #####################
-MODEL_ARGS="model.cond_model.context_conditioning=adaln \
-    model.cond_model.label_conditioning=adaln \
+# MODEL_ARGS="model.cond_model.context_conditioning=adaln \
+#     model.cond_model.label_conditioning=adaln \
+#     "
+MODEL_ARGS="model.cond_model.context_conditioning=control \
+    model.cond_model.label_conditioning=both \
     "
 #####################
 
