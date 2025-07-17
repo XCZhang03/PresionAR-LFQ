@@ -599,7 +599,7 @@ def eval_generation(
         generated_samples = torch.clamp(generated_samples, 0.0, 1.0)
 
         evaluator.update(generated_samples)
-
+    mlm_model.train()
     return evaluator.result()
 
 

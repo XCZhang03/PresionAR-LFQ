@@ -181,7 +181,7 @@ def main():
     logger.info(f"Masktoken: {cur_config.model.mlm_model.mask_token}")
     logger.info(f"Training mlm model with stage {stage} in {ar_model.num_stages} stages.")
     
-    if config.experiment.get('init_checkpoint', None) is not None:
+    if config.experiment.get('init_checkpoint', None) is not None and "ema_model" in str(config.experiment.init_checkpoint):
         ar_model.load_pretrained(config.experiment.init_checkpoint)
         logger.info(f"Loaded initial checkpoint from: {config.experiment.init_checkpoint}")
 
@@ -324,7 +324,7 @@ def main():
     first_epoch = 0
 
     init_checkpoint = False
-    if config.experiment.get("init_checkpoint", None) is not None and config.experiment.init_checkpoint != '' and os.path.exists(config.experiment.init_checkpoint):
+    if config.experiment.get("init_checkpoint", None) is not None and config.experiment.init_checkpoint != '' and os.path.exists(config.experiment.init_checkpoint) and "ema_model" not in str(config.experiment.init_checkpoint) :
         resume_lr_scheduler = config.experiment.get("resume_lr_scheduler", True)
         dont_resume_optimizer = config.experiment.get("dont_resume_optimizer", False)
         if not resume_lr_scheduler:
@@ -661,7 +661,7 @@ def eval_loss(
         accuracy_m.update(loss_dict['correct_tokens'].item())
         masked_accuracy_m.update(loss_dict['masked_correct_tokens'].item())
         masked_loss_m.update(loss_dict['masked_token_loss'].item())
-
+    ar_model.train()
     return {
         "loss": loss_average_m.avg,
         "accuracy": accuracy_m.avg,
@@ -713,6 +713,7 @@ def eval_generation(
 
         evaluator.update(generated_samples)
     print(f"Generated {num_generated} samples in {num_processes} processes.")
+    ar_model.train()
     return evaluator.result()
 
 

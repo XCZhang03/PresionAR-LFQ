@@ -98,12 +98,13 @@ def eval(
         print("warming up TensorFlow...")
         evaluator.warmup()
         tot_samples = 0
+        n_classes = 1000
         # This is important due to how the Inception Score is computed in the tensorflow suite.
         # The computation is done batchwise, hence we need to shuffle everithing to have a good representation per batch.
          # This is important due to how the Inception Score is computed in the tensorflow suite.
         # The computation is done batchwise, hence we need to shuffle everithing to have a good representation per batch.
-        labels = torch.randperm(1000, dtype=torch.int, device=device)
-        labels = labels.repeat(50)
+        labels = torch.randperm(n_classes, dtype=torch.int, device=device)
+        labels = labels.repeat(int(total_samples // n_classes))
         print("Running generation...")
         for i in tqdm.tqdm(range(total_samples//batchsize), desc="Generating samples", position=0):
             y = labels[batchsize*i: batchsize*(i+1)].long()

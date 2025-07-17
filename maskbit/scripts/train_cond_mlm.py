@@ -667,7 +667,7 @@ def eval_loss(
         accuracy_m.update(loss_dict['correct_tokens'].item())
         masked_accuracy_m.update(loss_dict['masked_correct_tokens'].item())
         masked_loss_m.update(loss_dict['masked_token_loss'].item())
-
+    mlm_model.train()
     return {
         "loss": loss_average_m.avg,
         "accuracy": accuracy_m.avg,
@@ -708,7 +708,7 @@ def eval_generation(
         generated_samples = torch.clamp(generated_samples, 0.0, 1.0)
 
         evaluator.update(generated_samples)
-
+    mlm_model.train()
     return evaluator.result()
 
 
