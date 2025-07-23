@@ -178,3 +178,8 @@ runs/
 maskbit/classify_image_graph_def.pb
 ckpt*/
 status/
+stats/
+
+**/runs/ 
+**/shards/
+
