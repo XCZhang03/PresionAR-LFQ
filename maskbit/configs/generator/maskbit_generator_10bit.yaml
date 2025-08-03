@@ -35,9 +35,9 @@ model:
         heads: 16
         mlp_dim: 4096
         dropout: 0.1
-        guidance_scale: 6.4
+        guidance_scale: 3.0
         guidance_annealing: "cosine"
-        num_steps: 64
+        num_steps: 256
         train_mask_schedule_strategy: "arccos"
         gen_mask_schedule_strategy: "arccos"
         softmax_temperature: 1.0

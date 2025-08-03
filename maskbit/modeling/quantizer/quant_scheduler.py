@@ -40,6 +40,7 @@ class QuantScheduler:
         schedule_type: str = 'uniform',
         batch_size: int = 8,
         weights: List[float] = None,
+        **kwargs
     ):
         self.num_quantizers = num_quantizers
         self.max_train_steps = max_train_steps
@@ -48,11 +49,16 @@ class QuantScheduler:
             weights = [1.0] * num_quantizers
         self.weights = [w / sum(weights) for w in weights]
         assert len(self.weights) == num_quantizers and all(w >= 0 for w in self.weights)
-        assert self.schedule_type in ['uniform', 'weighted']
+        assert self.schedule_type in ['uniform', 'weighted', 'anneal']
         self.batch_size = batch_size
         self.global_step = 0
 
         self.repr = False
+
+        if self.schedule_type == 'anneal':
+            self.anneal_start = kwargs.get('anneal_start', 100_000)
+            self.anneal_end = kwargs.get('anneal_end', 500_000)
+        
 
     def set_step(self, step: int):
         """
@@ -76,6 +82,18 @@ class QuantScheduler:
             # for i in range(self.batch_size):
             #     num_levels.append(np.random.choice(self.num_quantizers, p=self.weights) + 1)
             count_levels = [round(self.batch_size * w) for w in self.weights]
+        elif self.schedule_type == 'anneal':
+            self.weights = np.ones(self.num_quantizers)
+            for i in range(1, self.num_quantizers):
+                start = self.anneal_start + (i - 1) * (self.anneal_end - self.anneal_start) / (self.num_quantizers - 1)
+                end = self.anneal_start + i * (self.anneal_end - self.anneal_start) / (self.num_quantizers - 1)
+                self.weights[i] = np.clip(
+                    (self.global_step - start) / (end - start), 0, 1
+                )
+            self.weights /= np.sum(self.weights)
+            count_levels = [round(self.batch_size * w) for w in self.weights]
+        else:
+            raise ValueError(f"Unknown schedule type: {self.schedule_type}")
         num_levels = []
         for i, count in enumerate(count_levels):
             num_levels.extend([i + 1] * count)

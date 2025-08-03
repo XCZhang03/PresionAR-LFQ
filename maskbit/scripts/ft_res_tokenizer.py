@@ -172,6 +172,11 @@ def main():
         config.model.discriminator,
         loss_config=loss_config
     )
+    if config.experiment.get("loss_module", None) is not None and os.path.exists(config.experiment.loss_module):
+        from safetensors.torch import load_file
+        loss_module_sd = load_file(config.experiment.loss_module, device="cpu")
+        loss_module.load_state_dict(loss_module_sd, strict=True)
+        logger.info(f"Loading loss module from {config.experiment.loss_module}")
 
     # Print Model:
     input_size = (1, 3, config.dataset.preprocessing.resolution, config.dataset.preprocessing.resolution)
@@ -719,7 +724,7 @@ def save_checkpoint(model, output_dir, accelerator, global_step) -> Path:
         json.dump({"global_step": global_step}, (save_path / "metadata.json").open("w+"))
         logger.info(f"Saved state to {save_path}")
 
-        if global_step % 100_000 == 0:
+        if global_step % 20_000 == 0:
             os.makedirs(f"{output_dir}/archive", exist_ok=True)
             import shutil
             shutil.copytree(save_path, f"{output_dir}/archive/checkpoint-{global_step}", dirs_exist_ok=True)

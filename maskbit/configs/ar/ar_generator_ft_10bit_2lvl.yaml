@@ -54,7 +54,7 @@ model:
         attn_l2_norm: True
         context_conditioning: "adaln"
         label_conditioning: "adaln"
-        guidance_scale: 7.0
+        guidance_scale: 3.9
         guidance_annealing: "cosine"
         num_steps: 64
         train_mask_schedule_strategy: "arccos"
@@ -73,7 +73,7 @@ model:
         heads: 16
         mlp_dim: 4096
         dropout: 0.1
-        guidance_scale: 6.4
+        guidance_scale: 3.9
         guidance_annealing: "cosine"
         num_steps: 64
         train_mask_schedule_strategy: "arccos"

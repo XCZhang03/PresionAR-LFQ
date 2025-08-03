@@ -1,7 +1,7 @@
 experiment:
     project: "MaskBit"
     name: "rqgan_tokenizer"
-    run_name: "rqgan_10bit_4lvl"
+    run_name: "4lvl_512"
     max_train_examples: 1_281_167 # total number of imagenet examples
     save_every: 1000
     eval_every: 20_000
@@ -17,10 +17,10 @@ model:
     vq_model:
         model_class: "rqgan"
         quantizer_type: "residual_vq"
-        codebook_size: 1024
+        codebook_size: 512
         token_size: 256
         commitment_cost: 0.25
-        entropy_loss_weight: 0.0
+        entropy_loss_weight: 0.02
         entropy_loss_temperature: 0.01
         entropy_gamma: 1.0
         num_channels: 3  # rgb

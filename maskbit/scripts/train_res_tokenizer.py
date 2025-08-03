@@ -251,6 +251,7 @@ def main():
         batch_size=config.training.per_gpu_batch_size,
         schedule_type=config.model.vq_model.get("schedule_type", "uniform"),
         weights=config.model.vq_model.get("weights", None),
+        **config.model.vq_model.get("schedule_params", {}),
     )
 
     # DataLoaders creation:
