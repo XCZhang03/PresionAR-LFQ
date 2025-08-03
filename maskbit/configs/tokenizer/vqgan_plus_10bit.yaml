@@ -1,13 +1,13 @@
 experiment:
     project: "MaskBit"
-    name: "vqgan_plus_10bit"
+    name: "rqgan_tokenizer"
     max_train_examples: 1_281_167 # total number of imagenet examples
-    save_every: 20_000
+    save_every: 1000
     eval_every: 20_000
     generate_every: 2000
     log_every: 50
     log_grad_norm_every: 100_000
-    logger: "tensorboard"
+    logger: "wandb"
     resume: True
     init_checkpoint: ""
     # vqgan_checkpoint: "MODEL_PATH/vqgan_plus_10bit.bin"  # Only for evaluating a trained model
@@ -57,8 +57,8 @@ losses:
 
 dataset:
     params:
-        train_shards_path_or_url: "DATA_PATH/imagenet_shards/train/imagenet-train-{0000..0252}.tar"
-        eval_shards_path_or_url: "DATA_PATH/imagenet_shards/val/imagenet-val-{0000..0009}.tar"
+        train_shards_path_or_url: "./shards/train/imagenet-train-{0000..0252}.tar"
+        eval_shards_path_or_url: "./shards/val/imagenet-val-{0000..0009}.tar"
         shuffle_buffer_size: 1000
         num_workers_per_gpu: 8
         pin_memory: True
