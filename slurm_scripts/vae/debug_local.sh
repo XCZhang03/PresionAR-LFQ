@@ -17,18 +17,18 @@ LAUNCHER="accelerate launch \
     --num_machines 1 \
     "
 
-SCRIPT="${ACCELERATE_DIR}/scripts/ft_res_tokenizer.py"
+SCRIPT="${ACCELERATE_DIR}/scripts/train_res_tokenizer.py"
 
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="ft-test"
+RUN_NAME="vq-test"
 ####################
 
 
 ## change the batch size according to GPU memory
 SCRIPT_ARGS="
-    config=${ACCELERATE_DIR}/configs/tokenizer/ft_maskbit_tokenizer_10bit_2lvl.yaml \
+    config=${ACCELERATE_DIR}/configs/tokenizer/rqgan_tokenizer_10bit_4lvl.yaml \
     training.per_gpu_batch_size=16 \
     training.gradient_accumulation_steps=1 \
     dataset.params.train_shards_path_or_url=./shards/train/imagenet-train-{0000..0008}.tar \
@@ -38,9 +38,9 @@ SCRIPT_ARGS="
     experiment.eval_every=100 \
     experiment.run_name=${RUN_NAME} \
     experiment.logger=tensorboard \
-    optimizer.params.learning_rate=5e-5 \
-    optimizer.params.discriminator_learning_rate=2e-5 \
-    experiment.vqgan_checkpoint=/datapool/data2/home/linhw/zhangxiangcheng/DiffAR/PrecisionAR-LFQ/maskbit/maskbit_tokenizer_10bit.bin \
+    model.vq_model.schedule_type='anneal' \
+    model.vq_model.schedule_params.anneal_start=100_000 \
+    model.vq_model.schedule_params.anneal_end=500_000 \
     "
     
 # This step is necessary because accelerate launch does not handle multiline arguments properly

@@ -1,24 +1,25 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-debug
-#SBATCH -p gpu_test
+#SBATCH --job-name=vq-1-512
+#SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
 #SBATCH -o status/myoutput_%j.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
-#SBATCH --nodes=2                   # number of nodes
+#SBATCH --nodes=1                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
-#SBATCH --cpus-per-task=8           # number of CPU cores per task
-#SBATCH --gres=gpu:1                # number of GPUs per node
-#SBATCH -t 0-01:00                  # maximum execution time (HH:MM:SS)
+#SBATCH --cpus-per-task=16           # number of CPU cores per task
+#SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:4               # number of GPUs per node
+#SBATCH -t 6-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
+#SBATCH --account=kempner_ydu_lab
 
 ######################
 ### Set enviroment ###
 ######################
 source activateEnvironment.sh
-GPUS_PER_NODE=1
+GPUS_PER_NODE=4
 export LOG_LEVEL=INFO
 ######################
 
@@ -38,23 +39,36 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="test-vq"
+RUN_NAME="1lvl-512"
 ####################
+
+
+###################
+### Config file ###
+###################
+config_file=$ACCELERATE_DIR/configs/tokenizer/rqgan_tokenizer_10bit.yaml
+###################
+
+
+###################
+## Model args #####
+###################
+MODEL_ARGS="model.vq_model.schedule_type=uniform \
+    model.vq_model.codebook_size=512"
+###################
 
 srun bash -c "
     accelerate launch \
+    --num_processes $NUM_PROCESSES \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
-    config=$ACCELERATE_DIR/configs/tokenizer/rqgan_tokenizer_10bit_4lvl.yaml \
-    training.per_gpu_batch_size=8 \
-    training.gradient_accumulation_steps=1 \
-    experiment.save_every=100 \
-    experiment.generate_every=100 \
-    experiment.eval_every=400 \
+    config=$config_file \
+    training.per_gpu_batch_size=16 \
+    training.gradient_accumulation_steps=4 \
+    experiment.save_every=1_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
-    model.vq_model.schedule_type='anneal' \
-    model.vq_model.schedule_params.anneal_start=200_000 \
-    model.vq_model.schedule_params.anneal_end=300_000 \
+    ${MODEL_ARGS} \
     "
+
 
 

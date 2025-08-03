@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-4-huge_scale
+#SBATCH --job-name=vae-4-long
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -13,7 +13,7 @@
 #SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:4               # number of GPUs per node
 #SBATCH -t 6-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
-#SBATCH --account=kempner_sham_lab
+#SBATCH --account=kempner_ydu_lab
 
 ######################
 ### Set enviroment ###
@@ -39,7 +39,7 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-# RUN_NAME="4level-from_scratch-long"
+RUN_NAME="4level-from_scratch-long"
 # RUN_NAME="4level-resume_from_1lvl"
 # RUN_NAME="4lvl-from_scratch-half_weight"
 # RUN_NAME="4lvl-from_scratch-base_3"
@@ -49,7 +49,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 # RUN_NAME="4lvl-2variant-resume"
 # RUN_NAME="4lvl-large_scale"
 # RUN_NAME="4lvl-ft-decoder-from_1lvl"
-RUN_NAME="4lvl-huge_scale"
+# RUN_NAME="4lvl-huge_scale"
+# RUN_NAME="4lvl-ft-decoder-3"
 ####################
 
 
@@ -63,7 +64,7 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml
 ###################
 ## Model args #####
 ###################
-# MODEL_ARGS="model.vq_model.schedule_type=uniform"
+MODEL_ARGS="model.vq_model.schedule_type=uniform"
 # MODEL_ARGS="model.vq_model.schedule_type=weighted \
 #     model.vq_model.weights=[3,1,1,1] \
 #     "
@@ -76,7 +77,13 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml
 #     model.vq_model.schedule_type=uniform \
 #     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/1level-long/archive/checkpoint_502 \
 #     "
-MODEL_ARGS="model.vq_model.scales=[1,1,0.8,0.5]"
+# MODEL_ARGS="model.vq_model.scales=[1,1,0.8,0.5]"
+# MODEL_ARGS="model.vq_model.finetune_decoder=true \
+#     model.vq_model.schedule_type="weighted"  \
+#     model.vq_model.weights=[0,0,0,1] \
+#     model.vq_model.restart_ema=true \
+#     # experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-mixed_from_scratch-long/archive/checkpoint-700000 \
+#     "
 ###################
 
 srun bash -c "
