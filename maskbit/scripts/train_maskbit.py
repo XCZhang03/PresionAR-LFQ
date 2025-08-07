@@ -24,7 +24,7 @@ from utils.logger import setup_logger
 from utils.meter import AverageMeter
 from utils.script_utils import get_model_kwargs, get_sampling_kwargs, get_config, get_save_iteration
 from modeling.modules import EMAModel, MLMLoss, get_mask_tokens, sample, combine_factorized_tokens, split_factorized_tokens
-# from modeling.conv_vqgan import ConvVQModel
+from modeling.conv_vqgan import FTConvVQModel
 from modeling.rqgan import RQModel
 from modeling.bert import Bert, LFQBert
 from evaluator import GeneratorEvaluator
@@ -135,8 +135,11 @@ def main():
     # MODELS and OPTIMIZER  #
     #########################
     logger.info("Creating model and optimizer")
-
-    vqgan_model = RQModel(config.model.vq_model, legacy=False)
+    vqgan_cls = {
+        "ft-vqgan+": FTConvVQModel,
+        "rqgan": RQModel,
+    }
+    vqgan_model = vqgan_cls[config.model.vq_model.model_class](config.model.vq_model)
     vqgan_model.load_pretrained(config.experiment.vqgan_checkpoint)
     vqgan_model.eval()
     config.model.vq_model.codebook_size = vqgan_model.codebook_size

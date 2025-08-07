@@ -180,6 +180,8 @@ ckpt*/
 status/
 stats/
 
-**/runs/ 
-**/shards/
+**/runs
+**/shards
+**/wandb
+**/status
 
