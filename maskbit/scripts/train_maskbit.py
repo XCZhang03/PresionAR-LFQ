@@ -514,7 +514,7 @@ def main():
                     eval_scores = eval_generation(
                         mlm_model,
                         vqgan_model,
-                        eval_dataloader,
+                        accelerator,
                         evaluator,
                         config,
                     )
@@ -575,22 +575,32 @@ def main():
 def eval_generation(
     mlm_model,
     vqgan_model,
-    eval_loader,
+    accelerator,
     evaluator,
     config,
 ):
     mlm_model.eval()
     evaluator.reset_metrics()
 
-    patch_size = int(config.dataset.preprocessing.resolution // (2**(config.model.vq_model.num_resolutions - 1)))
-    scale_pow = config.model.mlm_model.get("scale_pow", 4.0)
+    eval_bs = 25 
+    tot_samples = 50_000
+    n_classes = 1000
+    repeats = int(tot_samples // n_classes)
+    num_processes = accelerator.num_processes
+    process_index = accelerator.process_index
+    print(f"Process {process_index} of {num_processes} started.")
+    subset_len = int(tot_samples // num_processes)
+    assert subset_len % eval_bs == 0
 
-    for batch in tqdm.tqdm(eval_loader):
-        class_tokens = batch["class_id"].to(
-                mlm_model.device, memory_format=torch.contiguous_format, non_blocking=True
-            )
+    all_labels = torch.arange(0, n_classes, device=accelerator.device, dtype=torch.int).repeat(repeats)
+    subset_labels = all_labels[process_index * subset_len: (process_index + 1) * subset_len]
+    num_batches = subset_len // eval_bs
+    subset_labels = subset_labels[torch.randperm(subset_labels.shape[0])]
+
+    num_generated = 0
+    for batch in tqdm.tqdm(range(num_batches), desc="Generating samples", position=0):
+        class_tokens = subset_labels[batch * eval_bs: (batch + 1) * eval_bs]
         num_samples = class_tokens.shape[0]
-
         generated_samples, _ = sample(
             mlm_model,
             vqgan_model,
@@ -601,7 +611,12 @@ def eval_generation(
         
         generated_samples = torch.clamp(generated_samples, 0.0, 1.0)
 
+        generated_samples = accelerator.gather(generated_samples)
+        accelerator.wait_for_everyone()
+        num_generated += generated_samples.shape[0]
+
         evaluator.update(generated_samples)
+    print(f"Generated {num_generated} samples in {num_processes} processes.")
     mlm_model.train()
     return evaluator.result()
 
