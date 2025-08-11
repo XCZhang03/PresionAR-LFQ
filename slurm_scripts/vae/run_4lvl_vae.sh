@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-4-long
+#SBATCH --job-name=vae-4-ft
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -39,7 +39,7 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="4level-from_scratch-long"
+# RUN_NAME="4level-from_scratch-long"
 # RUN_NAME="4level-resume_from_1lvl"
 # RUN_NAME="4lvl-from_scratch-half_weight"
 # RUN_NAME="4lvl-from_scratch-base_3"
@@ -51,6 +51,7 @@ RUN_NAME="4level-from_scratch-long"
 # RUN_NAME="4lvl-ft-decoder-from_1lvl"
 # RUN_NAME="4lvl-huge_scale"
 # RUN_NAME="4lvl-ft-decoder-3"
+RUN_NAME="4lvl-ft-decoder-all__perc_loss"
 ####################
 
 
@@ -64,7 +65,7 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml
 ###################
 ## Model args #####
 ###################
-MODEL_ARGS="model.vq_model.schedule_type=uniform"
+# MODEL_ARGS="model.vq_model.schedule_type=uniform"
 # MODEL_ARGS="model.vq_model.schedule_type=weighted \
 #     model.vq_model.weights=[3,1,1,1] \
 #     "
@@ -84,6 +85,14 @@ MODEL_ARGS="model.vq_model.schedule_type=uniform"
 #     model.vq_model.restart_ema=true \
 #     # experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-mixed_from_scratch-long/archive/checkpoint-700000 \
 #     "
+MODEL_ARGS="model.vq_model.finetune_decoder=true \
+    model.vq_model.schedule_type=weighted \
+    model.vq_model.weights=[0,0,0,1] \
+    model.vq_model.restart_ema=true \
+    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/4level-from_scratch-long/archive/checkpoint-1300000 \
+    losses.perceptual_loss_on_logits=false \
+    training.max_train_steps=1_600_000 \
+    "
 ###################
 
 srun bash -c "

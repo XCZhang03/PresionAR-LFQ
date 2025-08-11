@@ -38,7 +38,7 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="test-vq"
+RUN_NAME="test-vq-entropy"
 ####################
 
 srun bash -c "
@@ -53,8 +53,9 @@ srun bash -c "
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
     model.vq_model.schedule_type='anneal' \
-    model.vq_model.schedule_params.anneal_start=200_000 \
-    model.vq_model.schedule_params.anneal_end=300_000 \
+    model.vq_model.schedule_params.anneal_start=100_000 \
+    model.vq_model.schedule_params.anneal_end=500_000 \
+    experiment.init_checkpoint=runs/outputs/rqgan_tokenizer/4lvl-512-anneal/archive/checkpoint-100000 \
     "
 
 
