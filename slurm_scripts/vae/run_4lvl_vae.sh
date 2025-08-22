@@ -7,6 +7,7 @@
 #SBATCH --mail-user=504985967@qq.com
 #SBATCH -o status/myoutput_%j.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
+#SBATCH --open-mode=append
 #SBATCH --nodes=1                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=16           # number of CPU cores per task
@@ -51,7 +52,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 # RUN_NAME="4lvl-ft-decoder-from_1lvl"
 # RUN_NAME="4lvl-huge_scale"
 # RUN_NAME="4lvl-ft-decoder-3"
-RUN_NAME="4lvl-ft-decoder-all__perc_loss"
+# RUN_NAME="4lvl-ft_decoder"
+RUN_NAME="4lvl-ft_dec-2m"
 ####################
 
 
@@ -89,9 +91,9 @@ MODEL_ARGS="model.vq_model.finetune_decoder=true \
     model.vq_model.schedule_type=weighted \
     model.vq_model.weights=[0,0,0,1] \
     model.vq_model.restart_ema=true \
-    experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/4level-from_scratch-long/archive/checkpoint-1300000 \
+    experiment.init_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/4lvl-ft_decoder/archive/checkpoint-1600000 \
     losses.perceptual_loss_on_logits=false \
-    training.max_train_steps=1_600_000 \
+    training.max_train_steps=2_000_000 \
     "
 ###################
 
