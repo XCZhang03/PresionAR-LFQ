@@ -129,7 +129,7 @@ def main():
 
     # If passed along, set the training seed now.
     if config.training.seed is not None:
-        set_seed(config.training.seed)
+        set_seed(config.training.seed, device_specific=True)
 
     #########################
     # MODELS and OPTIMIZER  #
@@ -164,6 +164,8 @@ def main():
     )
     config.model.mlm_model.mask_token = mlm_model.mask_token
     logger.info(f"Masktoken: {config.model.mlm_model.mask_token}")
+    if config.experiment.get("mlm_checkpoint", None) is not None:
+        mlm_model.load_pretrained(config.experiment.mlm_checkpoint)
     # Create the EMA model
     if config.training.use_ema:
         ema_model = EMAModel(mlm_model.parameters(), decay=0.999, model_cls=model_cls,
