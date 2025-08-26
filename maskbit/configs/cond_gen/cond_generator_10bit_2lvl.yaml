@@ -4,7 +4,7 @@ experiment:
     run_name: "stage1-adaln-adaln"
     max_train_examples: 1_281_167 # total number of imagenet examples
     save_every: 1_000
-    eval_loss_every: 20_000
+    eval_loss_every: 10_000
     eval_gen_every: 40_000
     generate_every: 10_000
     log_every: 50
@@ -39,16 +39,16 @@ model:
     mlm_model:
         model_cls: "cond_bert"
         stage: 1
-        hidden_dim: 1024
-        depth: 24
-        heads: 16
+        hidden_dim: 768
+        depth: 20
+        heads: 12
         mlp_ratio: 4.0
-        dropout: 0.0
+        dropout: 0.1
         drop_path: 0.0
         attn_l2_norm: True
         context_conditioning: "adaln"
         label_conditioning: "adaln"
-        guidance_scale: 6.4
+        guidance_scale: 3.9
         guidance_annealing: "cosine"
         num_steps: 64
         train_mask_schedule_strategy: "arccos"
@@ -106,7 +106,7 @@ training:
     enable_tf32: True
     use_ema: True
     seed: 42
-    max_train_steps: 1_350_000
+    max_train_steps: 800_000
     overfit_batch: False
     overfit_batch_num: 1
     num_generated_images: 4 # Must be smaller than or equal to per_gpu_batch_size

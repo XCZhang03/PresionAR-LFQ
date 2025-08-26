@@ -8,7 +8,7 @@
 #SBATCH -o status/myoutput_%j.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --open-mode=append
-#SBATCH --nodes=2                   # number of nodes
+#SBATCH --nodes=1                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=16           # number of CPU cores per task
 #SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:4                # number of GPUs per node
@@ -41,7 +41,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="repro-2lvl-base"
+# RUN_NAME="repro-2lvl-base"
+RUN_NAME="repro-2lvl-test"
 ####################
 
 ###################
@@ -61,13 +62,24 @@ vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/mask
 #####################
 ## Model args #######
 #####################
+# MODEL_ARGS="model.mlm_model.guidance_scale=6.4 \
+#     model.vq_model.model_class=ft-vqgan+ \
+#     model.vq_model.quantizer_type=lookup-free \
+#     model.vq_model.residual_quantizer_type=residual_lfq \
+#     model.vq_model.scales=[1,0.5] \
+#     model.vq_model.variants=[2,3] \
+#     model.vq_model.pre_conv=True"
 MODEL_ARGS="model.mlm_model.guidance_scale=6.4 \
     model.vq_model.model_class=ft-vqgan+ \
     model.vq_model.quantizer_type=lookup-free \
     model.vq_model.residual_quantizer_type=residual_lfq \
     model.vq_model.scales=[1,0.5] \
     model.vq_model.variants=[2,3] \
-    model.vq_model.pre_conv=True"
+    model.vq_model.pre_conv=True \
+    experiment.mlm_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/ckpts/maskbit_generator_10bit-new.bin \
+    training.max_train_steps=2_000 \
+    optimizer.params.learning_rate=1e-5 \
+    "
 ####################
 
 srun bash -c "
@@ -84,7 +96,7 @@ srun bash -c "
     training.gradient_accumulation_steps=4 \
     experiment.run_name=${RUN_NAME} \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
-    experiment.eval_every=20_000 \
+    experiment.eval_every=500 \
     ${MODEL_ARGS} \
     "
 

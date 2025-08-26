@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SBATCH --job-name=control-adaln-2lvl
+#SBATCH --job-name=adaln-adaln-2lvl
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
 #SBATCH -o status/myoutput_%j.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
-#SBATCH --nodes=4                   # number of nodes
+#SBATCH --nodes=2                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=8           # number of CPU cores per task
 #SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:4                # number of GPUs per node
@@ -41,11 +41,11 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 # RUN_NAME="2lvl-concat-concat"
 # RUN_NAME="2lvl-embed-concat"
-# RUN_NAME="2lvl-adaln-adaln"
+RUN_NAME="2lvl-adaln-adaln-long"
 # RUN_NAME="2lvl-embed-adaln"
 # RUN_NAME="2lvl-embed-concat-small_lr"
 # RUN_NAME="2lvl-adaln-adaln-small_lr"
-RUN_NAME="2lvl-control-adaln"
+# RUN_NAME="2lvl-control-adaln"
 # RUN_NAME="2lvl-adaln-adaln-masked_only"
 ####################
 
@@ -59,7 +59,7 @@ config_file=$ACCELERATE_DIR/configs/cond_gen/cond_generator_10bit_2lvl.yaml
 ####################
 ## Tokenizer ckpt ##
 ####################
-vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-mixed_from_scratch-long/archive/checkpoint-800000/ema_model
+vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-resume/checkpoints/checkpoint_955/ema_model
 ####################
 
 
@@ -80,15 +80,15 @@ vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/mask
 #     model.mlm_model.label_conditioning=concat \
 #     model.mlm_model.tie_context_pos_embeddings=true \
 #     "
-# MODEL_ARGS="model.mlm_model.context_conditioning=adaln \
-#     model.mlm_model.label_conditioning=adaln \
-#     "
+MODEL_ARGS="model.mlm_model.context_conditioning=adaln \
+    model.mlm_model.label_conditioning=adaln \
+    "
 # MODEL_ARGS="model.mlm_model.context_conditioning=embed \
 #     model.mlm_model.label_conditioning=adaln \
 #     "
-MODEL_ARGS="model.mlm_model.context_conditioning=control \
-    model.mlm_model.label_conditioning=adaln \
-    "
+# MODEL_ARGS="model.mlm_model.context_conditioning=control \
+#     model.mlm_model.label_conditioning=adaln \
+#     "
 # MODEL_ARGS="model.mlm_model.context_conditioning=adaln \
 #     model.mlm_model.label_conditioning=adaln \
 #     experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-adaln-adaln/archive/checkpoint-400000 \
@@ -115,16 +115,10 @@ srun bash -c "
     $ACCELERATE_DIR/scripts/train_cond_mlm.py \
     config=$config_file \
     training.per_gpu_batch_size=32 \
-    training.gradient_accumulation_steps=2 \
-    experiment.eval_gen_every=20_000 \
-    experiment.eval_loss_every=10_000 \
-    experiment.resume=true \
+    training.gradient_accumulation_steps=8 \
     experiment.run_name=${RUN_NAME} \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
     model.mlm_model.num_steps=4 \
-    model.mlm_model.depth=20 \
-    model.mlm_model.hidden_dim=768 \
-    model.mlm_model.heads=12 \
     ${MODEL_ARGS} \
     "
 
