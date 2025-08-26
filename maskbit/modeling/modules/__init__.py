@@ -8,3 +8,4 @@ from .lpips import LPIPS
 from .masking import get_mask_tokens, get_masking_ratio
 from .factorization import combine_factorized_tokens, split_factorized_tokens, get_codebook_config
 from .sampling import sample, conditional_sample, residual_sample
+from .enc_aug import PostEncAug

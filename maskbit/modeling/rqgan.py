@@ -11,6 +11,7 @@ from modeling.modules import (BaseModel, ConvDecoder, ConvDecoderLegacy,
 # from modeling.quantizer import LookupFreeQuantizer, SimpleVectorizer
 from modeling.quantizer.residual_lfq import ResidualLFQ
 from modeling.quantizer.residual_vq import ResidualVQ
+from modeling.modules.enc_aug import PostEncAug
 
 
 def choose_vector_quantizer_class(config):
@@ -72,6 +73,14 @@ class RQModel(BaseModel):
         self.codebook_size = [q.codebook_size for q in self.quantize.quantizers]
         self.num_quantizers = self.quantize.num_quantizers
 
+        # latent augmentation
+        if self.config.get("augmentation", None) is None:
+            self.latent_aug = torch.nn.Identity()
+        else:
+            self.latent_aug = PostEncAug(self.config.augmentation)
+        
+
+
     def get_last_layer(self):
         return self.decoder.conv_out.weight
 
@@ -88,6 +97,7 @@ class RQModel(BaseModel):
                 and losses from the quantizer.
         """
         z = self.encoder(x)
+        z = self.latent_aug(z)
         z_quantized, result_dict = self.quantize(z, num_levels=num_levels, loss_weight=loss_weight)
         return z_quantized, result_dict
 
