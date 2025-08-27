@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-4-ft
+#SBATCH --job-name=vae-aug
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -20,7 +20,7 @@
 ### Set enviroment ###
 ######################
 source activateEnvironment.sh
-GPUS_PER_NODE=1
+GPUS_PER_NODE=4
 export LOG_LEVEL=INFO
 ######################
 
@@ -64,7 +64,7 @@ srun bash -c "
     --num_processes $NUM_PROCESSES \
     $ACCELERATE_DIR/scripts/train_res_tokenizer.py \
     config=$config_file \
-    training.per_gpu_batch_size=2 \
+    training.per_gpu_batch_size=32 \
     training.gradient_accumulation_steps=2 \
     experiment.save_every=1_000 \
     experiment.resume=true \
