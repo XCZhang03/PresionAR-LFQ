@@ -32,14 +32,13 @@ date_str=$(date +%Y-%m-%d_%H-%M-%S)
 #######################
 #### checkpoint #######
 #######################
-vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/ckpts/maskbit_tokenizer_10bit.bin
-ar_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/ckpts/maskbit_generator_10bit.bin
+vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-resume/checkpoints/checkpoint_955/ema_model
+ar_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/maskbit_generator_10bit/test-2lvl-base/archive/checkpoint-1200000/ema_model/pytorch_model.bin
 
 ###################
 ### Config file ###
 ###################
-config_file=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/configs/generator/maskbit_generator_10bit.yaml
-###################
+config_file=$ACCELERATE_DIR/configs/base_gen/maskbit_generator_10bit_2lvl.yaml
 
 ####################
 ### Set run name ###
@@ -48,11 +47,6 @@ RUN_NAME="eval_base_ar-${date_str}"
 ####################
 
 
-###################
-## Model args #####
-###################
-
-###################
 
 
 

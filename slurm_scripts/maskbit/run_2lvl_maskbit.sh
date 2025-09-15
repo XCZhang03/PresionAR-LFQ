@@ -61,7 +61,8 @@ vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/mask
 #####################
 ## Model args #######
 #####################
-MODEL_ARGS="model.mlm_model.guidance_scale=6.4"
+MODEL_ARGS="model.mlm_model.guidance_scale=6.4 \
+    training.max_train_steps=1_500_000"
 ####################
 
 srun bash -c "
@@ -74,8 +75,8 @@ srun bash -c "
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_maskbit.py \
     config=$config_file \
-    training.per_gpu_batch_size=32 \
-    training.gradient_accumulation_steps=4 \
+    training.per_gpu_batch_size=64 \
+    training.gradient_accumulation_steps=2 \
     experiment.run_name=${RUN_NAME} \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
     experiment.eval_every=20_000 \

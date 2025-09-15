@@ -40,7 +40,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="1lvl-aug-add-std0.1"
+# RUN_NAME="1lvl-aug-add-std0.1"
+RUN_NAME="1lvl-aug-add-std0.5"
 ####################
 
 
@@ -54,8 +55,11 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_14bit.yaml
 ###################
 ## Model args #####
 ###################
+# MODEL_ARGS="model.vq_model.augmentation.noise_mode=add \
+#     model.vq_model.augmentation.std=0.1 \
+#     "
 MODEL_ARGS="model.vq_model.augmentation.noise_mode=add \
-    model.vq_model.augmentation.std=0.1 \
+    model.vq_model.augmentation.std=0.5 \
     "
 ###################
 

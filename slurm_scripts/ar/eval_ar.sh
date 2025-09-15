@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=eval-ar
-#SBATCH -p gpu
+#SBATCH -p kempner_h100
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=504985967@qq.com
@@ -11,10 +11,10 @@
 #SBATCH --nodes=1                  # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=16           # number of CPU cores per task
-#SBATCH --gres=gpu:nvidia_a100-sxm4-80gb:1                # number of GPUs per node
+#SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:1                # number of GPUs per node
 #SBATCH -t 0-20:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
-#SBATCH --account=ydu_lab
+#SBATCH --account=kempner_ydu_lab
 
 ######################
 ### Set enviroment ###
@@ -32,14 +32,14 @@ date_str=$(date +%Y-%m-%d_%H-%M-%S)
 #######################
 #### checkpoint #######
 #######################
-vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/ft-2lvl-small_lr/archive/checkpoint-200000/ema_model
-ar_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/resar_generator_10bit/adaln-adaln-lbs/archive/checkpoint-160000/ema_model
+vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-resume/checkpoints/checkpoint_955/ema_model
+ar_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/maskbit_generator_10bit/test-2lvl-base/archive/checkpoint-1200000/ema_model/pytorch_model.bin
 #######################
 
 ###################
 ### Config file ###
 ###################
-config_file=$ACCELERATE_DIR/configs/ar/ar_generator_ft_10bit_2lvl.yaml
+config_file=$ACCELERATE_DIR/configs/ar/ar_generator_10bit_2lvl.yaml
 ###################
 
 ####################
@@ -53,8 +53,8 @@ RUN_NAME="eval_ar-${date_str}"
 ## Model args #####
 ###################
 MODEL_ARGS="model.cond_model.guidance_scale=[3.9] \
-    model.base_model.randomize_temperature=10.5 \
-    model.base_model.guidance_scale=3.9 \
+    model.base_model.randomize_temperature=15 \
+    model.base_model.guidance_scale=5.0 \
     model.base_model.num_steps=64 \
     "
 # MODEL_ARGS="model.ar_model.cur_stage=0 \

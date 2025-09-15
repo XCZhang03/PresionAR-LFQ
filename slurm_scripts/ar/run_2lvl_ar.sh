@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=ft-2lvl
+#SBATCH --job-name=adaln-adaln
 #SBATCH -p kempner_requeue
 #SBATCH --mem=256G
 #SBATCH --mail-type=FAIL
@@ -41,69 +41,54 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-# RUN_NAME="repro-2lvl-base"
-# RUN_NAME="repro-2lvl-test"
-RUN_NAME="ft-2lvl-test"
+RUN_NAME="adaln-adaln-resume-llr"
 ####################
 
 ###################
 ### Config file ###
 ###################
-config_file=$ACCELERATE_DIR/configs/base_gen/maskbit_generator_10bit_2lvl.yaml
+config_file=$ACCELERATE_DIR/configs/ar/ar_generator_10bit_2lvl.yaml
 ###################
 
 
 ####################
 ## Tokenizer ckpt ##
 ####################
-# vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/ft-2lvl-small_lr/archive/checkpoint-200000/ema_model
 vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-resume/checkpoints/checkpoint_955/ema_model
 ####################
+
+######################
+## Stage model ckpt ##
+######################
+stage_0_model_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/maskbit_generator_10bit/test-2lvl-base/archive/checkpoint-1200000/ema_model/pytorch_model.bin
+######################
 
 
 #####################
 ## Model args #######
 #####################
-# MODEL_ARGS="model.mlm_model.guidance_scale=6.4 \
-#     model.vq_model.model_class=ft-vqgan+ \
-#     model.vq_model.quantizer_type=lookup-free \
-#     model.vq_model.residual_quantizer_type=residual_lfq \
-#     model.vq_model.scales=[1,0.5] \
-#     model.vq_model.variants=[2,3] \
-#     model.vq_model.pre_conv=True"
-# MODEL_ARGS="model.mlm_model.guidance_scale=6.4 \
-#     model.vq_model.model_class=ft-vqgan+ \
-#     model.vq_model.quantizer_type=lookup-free \
-#     model.vq_model.residual_quantizer_type=residual_lfq \
-#     model.vq_model.scales=[1,0.5] \
-#     model.vq_model.variants=[2,3] \
-#     model.vq_model.pre_conv=True \
-#     experiment.mlm_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/ckpts/maskbit_generator_10bit-new.bin \
-#     training.max_train_steps=2_000 \
-#     optimizer.params.learning_rate=1e-5 \
-#     "
-MODEL_ARGS="experiment.mlm_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/ckpts/maskbit_generator_10bit-new.bin \
+MODEL_ARGS="model.ar_model.stage_1_model_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/conditional_generator_10bit/2lvl-adaln-adaln-long/checkpoints/checkpoint_219/ema_model \
     training.max_train_steps=600_000 \
-    model.mlm_model.guidance_scale=6.4 \
-    optimizer.params.learning_rate=5e-5 \
-    "
+    optimizer.params.learning_rate=2e-4"
 ####################
 
 srun bash -c "
     accelerate launch \
+    --multi_gpu \
     --rdzv_backend c10d \
     --num_processes $NUM_PROCESSES \
     --num_machines $NNODES \
     --main_process_ip $head_node_ip \
     --main_process_port 29500 \
     --machine_rank $SLURM_PROCID \
-    $ACCELERATE_DIR/scripts/train_maskbit.py \
+    $ACCELERATE_DIR/scripts/train_ar.py \
     config=$config_file \
     training.per_gpu_batch_size=64 \
-    training.gradient_accumulation_steps=2 \
+    training.gradient_accumulation_steps=4 \
     experiment.run_name=${RUN_NAME} \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
     experiment.eval_every=10_000 \
+    model.ar_model.stage_0_model_checkpoint=${stage_0_model_checkpoint} \
     ${MODEL_ARGS} \
     "
 
