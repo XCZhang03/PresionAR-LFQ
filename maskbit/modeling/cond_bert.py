@@ -383,14 +383,14 @@ class CondLFQBert(BaseModel):
         if drop_label_mask is not None:
             cls_token[drop_label_mask] = self.drop_label  # Drop condition
         cls_embedding = self.class_emb(cls_token.view(b, -1))
-        if self.label_conditioning == 'concat':
+        if self.label_conditioning != 'adaln':
             x = torch.cat([x, cls_embedding], dim=1)
         
         x = self.first_layer(x)  # [B, L, D]
         x, _ = self.transformer(  
             x,
             context=None,
-            cond=cls_embedding if self.label_conditioning == 'adaln' else None,
+            cond=cls_embedding if self.label_conditioning != 'concat' else None,
         )
         x = x[:, :self.seq_len, :]  
         x = self.last_layer(x)
