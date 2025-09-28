@@ -9,6 +9,7 @@ from omegaconf import OmegaConf
 import tqdm
 
 from modeling.conv_vqgan import ConvVQModel
+from modeling.rqgan import RQModel
 from modeling.bert import Bert, LFQBert
 from modeling.modules import sample
 from utils.adm_eval_suite import Evaluator
@@ -23,7 +24,11 @@ TRAIN_SET_STATISTICS_512 = "train_imagenet512_stats.npz"
 
 @torch.no_grad()
 def get_tokenizer(config, tokenizer_path):
-    tokenizer_model = ConvVQModel(config.model.vq_model, legacy=False)
+    model_cls ={
+        "rqgan": RQModel,
+        "conv-vqgan": ConvVQModel,
+    }[config.model.vq_model.model_class]
+    tokenizer_model = model_cls(config.model.vq_model, legacy=False)
     tokenizer_model.load_pretrained(tokenizer_path)
     tokenizer_model.eval()
     tokenizer_model.requires_grad_(False)
@@ -65,13 +70,14 @@ def main(
     device: str = "cuda:0",
 ):
     config = OmegaConf.load(config_file)
+    print(f"Config:\n{OmegaConf.to_yaml(config)}")
 
     if config.training.enable_tf32:
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = False
 
-    if config.model.vq_model.quantizer_type == "lookup-free":
+    if config.model.vq_model.quantizer_type == "lookup-free" or config.model.vq_model.quantizer_type == "residual_lfq":
         num_codebook_entries = 2 ** config.model.vq_model.token_size
         config.model.vq_model.codebook_size = num_codebook_entries
         config.model.mlm_model.mask_token = int(2 ** (math.log2(num_codebook_entries) // config.model.mlm_model.codebook_splits))
