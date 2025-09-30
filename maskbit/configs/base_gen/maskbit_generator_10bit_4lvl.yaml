@@ -63,8 +63,8 @@ losses:
 
 dataset:
     params:
-        train_shards_path_or_url: "DATA_PATH/imagenet_shards/train/imagenet-train-{0000..0252}.tar"
-        eval_shards_path_or_url: "DATA_PATH/imagenet_shards/val/imagenet-val-{0000..0009}.tar"
+        train_shards_path_or_url: "./shards/train/imagenet-train-{0000..0252}.tar"
+        eval_shards_path_or_url: "./shards/val/imagenet-val-{0000..0009}.tar"
         shuffle_buffer_size: 1000
         num_workers_per_gpu: 8
         pin_memory: True
