@@ -25,6 +25,7 @@ from utils.logger import setup_logger
 from utils.meter import AverageMeter
 from modeling.modules import EMAModel, VQGANLoss
 from modeling.conv_vqgan import FTConvVQModel
+from modeling.rqgan import RQModel
 from modeling.quantizer.quant_scheduler import QuantScheduler
 from evaluator.evaluator import ResidualTokenizerEvaluator
 
@@ -139,7 +140,12 @@ def main():
     #########################
     logger.info("Creating model and optimizer")
 
-    model = FTConvVQModel(config.model.vq_model)
+    model_cls = {
+        "ft-vqgan+": FTConvVQModel,
+        "rqgan": RQModel,
+    }[config.model.vq_model.model_class]
+
+    model = model_cls(config.model.vq_model)
 
     if config.experiment.get("vqgan_checkpoint", None) is not None and os.path.exists(config.experiment.vqgan_checkpoint):
         logger.info(f"Loading VQGAN checkpoint from {config.experiment.vqgan_checkpoint}")
@@ -151,11 +157,11 @@ def main():
 
     # Create the EMA model
     if config.training.use_ema:
-        ema_model = EMAModel(model.parameters(), decay=0.999, model_cls=FTConvVQModel, config=config.model.vq_model)
+        ema_model = EMAModel(model.parameters(), decay=0.999, model_cls=model_cls, config=config.model.vq_model)
 
         # Create custom saving and loading hooks so that `accelerator.save_state(...)` serializes in a nice format.
         def load_model_hook(models, input_dir):
-            load_model = EMAModel.from_pretrained(os.path.join(input_dir, "ema_model"), model_cls=FTConvVQModel, config=config.model.vq_model)
+            load_model = EMAModel.from_pretrained(os.path.join(input_dir, "ema_model"), model_cls=model_cls, config=config.model.vq_model)
             ema_model.load_state_dict(load_model.state_dict())
             ema_model.to(accelerator.device)
             del load_model
