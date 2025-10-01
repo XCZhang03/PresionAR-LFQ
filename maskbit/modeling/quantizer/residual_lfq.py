@@ -18,7 +18,7 @@ class ResidualLFQ(torch.nn.Module):
             variants: List[int] = [2,3],
             scales:  Union[List[int], int] = None,
             commitment_cost: float = 0.25,
-            entropy_loss_weight: float = 0.1,
+            entropy_loss_weight: Union[float, List[float]] = 0.1,
             entropy_loss_temperature: float = 0.01,
             entropy_gamma: Union[float, List[float]] = 1.0,
     ):
@@ -48,6 +48,13 @@ class ResidualLFQ(torch.nn.Module):
             raise ValueError("entropy_gamma should be a float or a list of floats")
         print(f"quantizer entropy_gamma: {entropy_gamma}")
 
+        if isinstance(entropy_loss_weight, (ListConfig, list)):
+            assert len(entropy_loss_weight) == num_quantizers, "entropy_loss_weight should be a list of length num_quantizers"
+        elif isinstance(entropy_loss_weight, float):
+            entropy_loss_weight = [entropy_loss_weight] * num_quantizers
+        else:
+            raise ValueError("entropy_loss_weight should be a float or a list of floats")
+
         self.quantizers = []
         # self.quantizers.append(
         #     LookupFreeQuantizer(
@@ -63,7 +70,7 @@ class ResidualLFQ(torch.nn.Module):
                 MultivariantLFQ(
                     token_size=token_size,
                     commitment_cost=commitment_cost,
-                    entropy_loss_weight=entropy_loss_weight,
+                    entropy_loss_weight=entropy_loss_weight[ind],
                     entropy_loss_temperature=entropy_loss_temperature,
                     entropy_gamma=entropy_gamma[ind],
                     scale = self.scales[ind],
