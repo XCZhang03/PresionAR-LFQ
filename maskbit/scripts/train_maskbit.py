@@ -736,7 +736,7 @@ def save_checkpoint(model, output_dir, accelerator, global_step) -> Path:
         json.dump({"global_step": global_step}, (save_path / "metadata.json").open("w+"))
         logger.info(f"Saved state to {save_path}")
 
-        if global_step % 100_000 == 0:
+        if global_step % 20_000 == 0:
             os.makedirs(f"{output_dir}/archive", exist_ok=True)
             import shutil
             shutil.copytree(save_path, f"{output_dir}/archive/checkpoint-{global_step}", dirs_exist_ok=True)
