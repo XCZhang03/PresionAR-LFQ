@@ -32,14 +32,18 @@ date_str=$(date +%Y-%m-%d_%H-%M-%S)
 #######################
 #### checkpoint #######
 #######################
-vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-resume/checkpoints/checkpoint_955/ema_model
-ar_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/maskbit_generator_10bit/test-2lvl-base/archive/checkpoint-1200000/ema_model/pytorch_model.bin
-#######################
+vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/4lvl-ft_dec-2m/archive/checkpoint-1800000/ema_model/pytorch_model.bin
+# ar_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/resar_generator_10bit/adaln-adaln-resume/checkpoints/checkpoint_50/ema_model/composed_model_0/pytorch_model.bin
+# ar_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/resar_generator_10bit/2lvl-bit-group2-both/archive/checkpoint-200000/ema_model/composed_model_0/pytorch_model.bin
+# ar_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/resar_generator_10bit/adaln-adaln-resume/checkpoints/checkpoint_50/ema_model/composed_model_2/pytorch_model.bin
+ar_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/resar_generator_10bit/4lvl-stage3/checkpoints/checkpoint_23/ema_model/pytorch_model.bin
 
 ###################
 ### Config file ###
 ###################
-config_file=$ACCELERATE_DIR/configs/ar/ar_generator_10bit_2lvl.yaml
+# config_file=$ACCELERATE_DIR/configs/ar/ar_generator_10bit_2lvl.yaml
+# config_file=$ACCELERATE_DIR/configs/ar/ar_bit_generator_10bit_2lvl.yaml
+config_file=$ACCELERATE_DIR/configs/ar/ar_generator_10bit_4lvl.yaml
 ###################
 
 ####################
@@ -52,13 +56,15 @@ RUN_NAME="eval_ar-${date_str}"
 ###################
 ## Model args #####
 ###################
-MODEL_ARGS="model.cond_model.guidance_scale=[3.9] \
-    model.base_model.randomize_temperature=15 \
-    model.base_model.guidance_scale=5.0 \
+MODEL_ARGS="model.cond_model.guidance_scale=[2.0,1.0,0] \
+    model.cond_model.num_steps=[64,32,2] \
+    model.cond_model.randomize_temperature=10 \
+    model.base_model.randomize_temperature=10 \
+    model.base_model.guidance_scale=4.0 \
     model.base_model.num_steps=64 \
     "
 # MODEL_ARGS="model.ar_model.cur_stage=0 \
-#     model.base_model.guidance_scale=6.0 \
+#     model.base_model.guidance_scale=5.0 \
 #     "
 ###################
 

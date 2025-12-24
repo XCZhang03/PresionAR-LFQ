@@ -19,6 +19,7 @@ class MultivariantLFQ(torch.nn.Module):
         entropy_loss_weight: float = 0.1,
         entropy_loss_temperature: float = 0.01,
         entropy_gamma: float = 1.0,
+        perturb_prob: float = 0.0
     ):
         """ Initializes the lookup-free quantizer.
 
@@ -49,6 +50,9 @@ class MultivariantLFQ(torch.nn.Module):
         
         codebook = self.convert_indices_to_tokens(torch.arange(self.codebook_size))
         self.register_buffer('codebook', codebook, persistent=False)
+
+        self.perturb_prob = perturb_prob
+        self.enable_perturb = False
         
     def normalize(self, z: torch.Tensor) -> torch.Tensor:
         """ Normalizes the input tensor.
@@ -120,6 +124,10 @@ class MultivariantLFQ(torch.nn.Module):
 
         loss = commitment_loss + entropy_loss
 
+        if self.enable_perturb:
+            # optionally perturb some bits
+            z_quantized = self.perturb_bits(z_quantized)
+
         # preserve gradients
         z_quantized = z + (z_quantized - z).detach()
 
@@ -137,7 +145,26 @@ class MultivariantLFQ(torch.nn.Module):
 
         return z_quantized, result_dict
 
-    
+    def perturb_bits(self, z_quantized: torch.Tensor) -> torch.Tensor:
+        """ Randomly perturb some bits in the quantized tensor.
+
+        Args:
+            z_quantized -> torch.Tensor: The quantized tensor. shape: (b, c, h, w)
+
+        Returns:
+            z_quantized -> torch.Tensor: The perturbed quantized tensor.
+        """
+        bits_quantized = self.denormalize(z_quantized / self.scale)
+        if self.perturb_prob > 0:
+            perturb_bits = torch.where(
+                torch.rand_like(bits_quantized) < self.perturb_prob,
+                torch.randint_like(bits_quantized, low=0, high=2) * 2 - 1,  # randomly -1 or 1
+                torch.zeros_like(bits_quantized)
+            )
+            bits_quantized = (bits_quantized + perturb_bits).clamp(0, self.levels - 1)
+            z_quantized = self.normalize(bits_quantized) * self.scale
+        return z_quantized
+
     def convert_tokens_to_indices(self, tokens: torch.Tensor) -> torch.Tensor:
         """ Converts the given tokens to index numbers.
 

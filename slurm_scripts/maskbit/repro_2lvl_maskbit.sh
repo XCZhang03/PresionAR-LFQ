@@ -8,10 +8,10 @@
 #SBATCH -o status/myoutput_%j.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e status/myerrors_%j.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --open-mode=append
-#SBATCH --nodes=2                   # number of nodes
+#SBATCH --nodes=1                   # number of nodes
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=16           # number of CPU cores per task
-#SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:4                # number of GPUs per node
+#SBATCH --gres=gpu:nvidia_h200:4                # number of GPUs per node
 #SBATCH -t 2-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
 #SBATCH --account=kempner_ydu_lab
@@ -28,7 +28,14 @@ export LOG_LEVEL=INFO
 ######################
 #### Set network #####
 ######################
-head_node_ip=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
+SITE_DOMAIN="rc.fas.harvard.edu"
+MASTER_SHORT="$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n1)"
+if [[ "$MASTER_SHORT" == *".${SITE_DOMAIN}" ]]; then
+  export MASTER_ADDR="$MASTER_SHORT"
+else
+  export MASTER_ADDR="$MASTER_SHORT.${SITE_DOMAIN}"
+fi
+export MASTER_PORT=29500
 ######################
 
 ######################
@@ -43,7 +50,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 # RUN_NAME="repro-2lvl-base"
 # RUN_NAME="repro-2lvl-test"
-RUN_NAME="ft-2lvl-test"
+# RUN_NAME="ft-2lvl-test"
+RUN_NAME="ft-2lvl-slr"
 ####################
 
 ###################
@@ -82,10 +90,13 @@ vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/mask
 #     training.max_train_steps=2_000 \
 #     optimizer.params.learning_rate=1e-5 \
 #     "
+# MODEL_ARGS="experiment.mlm_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/ckpts/maskbit_generator_10bit-new.bin \
+#     training.max_train_steps=600_000 \
+#     optimizer.params.learning_rate=5e-5 \
+#     "
 MODEL_ARGS="experiment.mlm_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/ckpts/maskbit_generator_10bit-new.bin \
-    training.max_train_steps=600_000 \
-    model.mlm_model.guidance_scale=6.4 \
-    optimizer.params.learning_rate=5e-5 \
+    training.max_train_steps=400_000 \
+    optimizer.params.learning_rate=4e-5 \
     "
 ####################
 
@@ -94,16 +105,16 @@ srun bash -c "
     --rdzv_backend c10d \
     --num_processes $NUM_PROCESSES \
     --num_machines $NNODES \
-    --main_process_ip $head_node_ip \
-    --main_process_port 29500 \
+    --main_process_ip $MASTER_ADDR \
+    --main_process_port $MASTER_PORT \
     --machine_rank $SLURM_PROCID \
     $ACCELERATE_DIR/scripts/train_maskbit.py \
     config=$config_file \
-    training.per_gpu_batch_size=64 \
+    training.per_gpu_batch_size=128 \
     training.gradient_accumulation_steps=2 \
     experiment.run_name=${RUN_NAME} \
     experiment.vqgan_checkpoint=${vqgan_checkpoint} \
-    experiment.eval_every=10_000 \
+    experiment.eval_every=5_000 \
     ${MODEL_ARGS} \
     "
 

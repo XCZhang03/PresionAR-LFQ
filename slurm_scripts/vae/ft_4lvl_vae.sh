@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-4-ft
+#SBATCH --job-name=ft-12b-4lvl
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -11,9 +11,9 @@
 #SBATCH --ntasks-per-node=1         # number of MP tasks
 #SBATCH --cpus-per-task=16           # number of CPU cores per task
 #SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:4               # number of GPUs per node
-#SBATCH -t 6-00:00                  # maximum execution time (HH:MM:SS)
+#SBATCH -t 2-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
-#SBATCH --account=kempner_sham_lab
+#SBATCH --account=kempner_ydu_lab
 
 ######################
 ### Set enviroment ###
@@ -39,22 +39,39 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 ### Set run name ###
 ####################
-RUN_NAME="ft-4lvl-from_scratch"
+# RUN_NAME="ft-4lvl-12bit"
+# RUN_NAME="ft-4lvl-spectralnorm"
+RUN_NAME="ft-4lvl-slr"
 ####################
 
 
 ###################
 ### Config file ###
 ###################
-config_file=$ACCELERATE_DIR/configs/tokenizer/ft_maskbit_tokenizer_10bit_4lvl.yaml
+config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_12bit_4lvl.yaml
 ###################
 
 
 ###################
 ## Model args #####
 ###################
-MODEL_ARGS="model.vq_model.schedule_type=uniform \
-    losses.discriminator_start=2000 \
+# MODEL_ARGS="losses.discriminator_start=2000 \
+#     optimizer.params.learning_rate=5e-5 \
+#     optimizer.params.discriminator_learning_rate=5e-5 \
+#     training.max_train_steps=200_000 \
+#     model.vq_model.entropy_loss_weight=[0.1,0,0,0] \
+#     model.discriminator.spectral_norm=True \
+#     experiment.vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_12bit/ft-4lvl-spectralnorm/archive/checkpoint-80000/ema_model/pytorch_model.bin \
+#     "
+MODEL_ARGS="losses.discriminator_start=2000 \
+    optimizer.params.learning_rate=5e-5 \
+    optimizer.params.discriminator_learning_rate=5e-6 \
+    training.max_train_steps=200_000 \
+    model.vq_model.entropy_loss_weight=[0.1,0,0,0] \
+    model.discriminator.spectral_norm=True \
+    losses.lecam_regularization_weight=0.01 \
+    experiment.init_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_12bit/ft-4lvl-spectralnorm/archive/checkpoint-60000 \
+    experiment.dont_resume_optimizer=True \
     "
 ###################
 
@@ -69,7 +86,6 @@ srun bash -c "
     experiment.save_every=1_000 \
     experiment.resume=true \
     experiment.run_name=${RUN_NAME} \
-    experiment.vqgan_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/ckpts/maskbit_tokenizer_10bit.bin \
     ${MODEL_ARGS} \
     "
 

@@ -45,10 +45,16 @@ def compose_stage_model_checkpoint(ar_model_path, **kwargs):
         stage_model = torch.load(stage_model_path, map_location="cpu")
         prefix = 'base_model.' if stage == 0 else f'cond_models.{stage-1}.'
         for k, v in stage_model.items():
+            assert prefix + k in ar_model, f"Key {prefix + k} not found in AR model"
+            assert ar_model[prefix + k].shape == v.shape, f"Shape mismatch for key {prefix + k}"
             ar_model[prefix + k] = v
         print(f"Integrated stage {stage} model from {stage_model_path}")
 
-    save_dir = Path(f"{ar_model_dir}/composed_model")
+    i = 0
+    save_dir = ar_model_dir / f"composed_model_{i}"
+    while save_dir.exists():
+        i += 1
+        save_dir = Path(str(save_dir)[:-2] + f"_{i}")
     os.makedirs(save_dir, exist_ok=True)
     torch.save(ar_model, save_dir / "pytorch_model.bin")
     with open(save_dir / "model_sources.json", "w") as f:
@@ -56,7 +62,7 @@ def compose_stage_model_checkpoint(ar_model_path, **kwargs):
     print(f"Composed model saved to {save_dir / 'pytorch_model.bin'}")
 
 if __name__ == "__main__":
-    model_path = "/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/resar_generator_10bit/adaln-adaln-resume/checkpoints/checkpoint_50/ema_model/pytorch_model.bin"
-    stage_0_model_path = "/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/maskbit_generator_10bit/ft-2lvl-test/checkpoints/checkpoint_36/ema_model/pytorch_model.bin"
-    # save_stage_model_ckpt(model_path)
-    compose_stage_model_checkpoint(model_path, stage_0_model_path=stage_0_model_path)
+    model_path = "/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/resar_generator_10bit/4lvl-stage3/checkpoints/checkpoint_89/ema_model/pytorch_model.bin"
+    # stage_0_model_path = "/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/maskbit_generator_10bit/test-2lvl-base/checkpoints/checkpoint_1461/ema_model/pytorch_model.bin"
+    save_stage_model_ckpt(model_path)
+    # compose_stage_model_checkpoint(model_path, stage_0_model_path=stage_0_model_path)

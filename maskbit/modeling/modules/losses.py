@@ -7,6 +7,15 @@ from .lpips import LPIPS
 from .perceptual_loss import PerceptualLoss
 from . import gan_utils
 
+from torch import nn
+from torch.nn.utils.parametrizations import spectral_norm
+
+def add_spectral_norm(model):
+    for m in model.modules():
+        if isinstance(m, (nn.Conv2d, nn.Linear, nn.ConvTranspose2d)):
+            spectral_norm(m)
+        elif hasattr(m, "conv") and isinstance(m.conv, nn.Conv2d):
+            spectral_norm(m.conv)
 
 def create_perception_loss(perception_loss: str, compute_on_logits: bool = True) -> torch.nn.Module:
     """ Creates the perception loss.
@@ -47,6 +56,9 @@ class VQGANLoss(torch.nn.Module):
         assert loss_config.discriminator_gradient_penalty in ("none", "adopt_weight")
 
         self.discriminator = gan_utils.create_discriminator(discriminator_config)
+        if discriminator_config.get("spectral_norm", False):
+            print("Adding spectral norm to the discriminator.")
+            self.discriminator.apply(add_spectral_norm)
 
         self.reconstruction_loss = loss_config.reconstruction_loss
         self.reconstruction_weight = loss_config.get("reconstruction_weight", 1.0)
@@ -344,18 +356,12 @@ class MLMLoss(torch.nn.Module):
 
 
 if __name__ == "__main__":
-    loss_module = MLMLoss()
-
-    batchsize = 2
-    codebook_dim = 4
-    num_codebooks = 1
-
-    logits = torch.rand((batchsize, 3, num_codebooks, codebook_dim))
-    targets = torch.randint(0, codebook_dim, (batchsize, 3, num_codebooks))
-    masks = torch.randint(0, 2, (batchsize, 3, num_codebooks), dtype=bool)
-
-    loss, loss_dict = loss_module(logits, targets, masks)
-    print(logits)
-    print(targets)
-    print(masks)
-    print(loss, loss_dict)
+    from omegaconf import OmegaConf
+    config = OmegaConf.load("/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/configs/tokenizer/rqbit_tokenizer_12bit_4lvl.yaml")
+    loss_module = VQGANLoss(
+        discriminator_config=config.model.discriminator,
+        loss_config=config.losses
+    )
+    discriminator = loss_module.discriminator
+    for name, param in discriminator.named_parameters():
+        print(name, param.shape)

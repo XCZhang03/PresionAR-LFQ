@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-aug
+#SBATCH --job-name=ft-vae-aug
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -41,7 +41,8 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ### Set run name ###
 ####################
 # RUN_NAME="1lvl-aug-add-std0.1"
-RUN_NAME="1lvl-aug-add-std0.5"
+# RUN_NAME="1lvl-aug-add-std0.5"
+RUN_NAME="ft-1lvl-aug-add-std0.5"
 ####################
 
 
@@ -60,6 +61,11 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_14bit.yaml
 #     "
 MODEL_ARGS="model.vq_model.augmentation.noise_mode=add \
     model.vq_model.augmentation.std=0.5 \
+    experiment.vqgan_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/ckpts/maskbit_tokenizer_14bit.bin \
+    model.discriminator.spectral_norm=True \
+    optimizer.params.learning_rate=5e-5 \
+    optimizer.params.discriminator_learning_rate=2e-5 \
+    training.max_train_steps=200_000 \
     "
 ###################
 

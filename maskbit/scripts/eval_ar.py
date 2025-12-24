@@ -182,24 +182,9 @@ def main():
 
     logger.info(f"Config:\n{OmegaConf.to_yaml(config)}")
 
-    keys = ["num_steps", "guidance_scale"]
-
-    from copy import deepcopy
-    from collections.abc import Iterable
-    from itertools import product
-    for key in keys:
-        if not isinstance(config.model.cond_model.get(key, None), Iterable):
-            config.model.cond_model[key] = [config.model.cond_model[key]]
-    # Get all combinations of values for the keys
-    values_list = [config.model.cond_model[key] for key in keys]
-    for values in product(*values_list):
-        config_copy = deepcopy(config)
-        for i, key in enumerate(keys):
-            config_copy.model.cond_model[key] = values[i]
-        logger.info(f"Running eval with {dict(zip(keys, values))}")
-        eval_scores = eval(config_copy)
-        # wandb.log({**dict(zip(keys, values)), **eval_scores})
-        logger.info(f"Eval scores: {eval_scores}")
+    
+    eval_scores = eval(config)
+    logger.info(f"Eval scores: {eval_scores}")
     
     
 

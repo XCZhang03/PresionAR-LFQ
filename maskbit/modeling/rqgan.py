@@ -25,6 +25,7 @@ def choose_vector_quantizer_class(config):
             config.entropy_loss_weight,
             config.entropy_loss_temperature,
             config.entropy_gamma,
+            config.get("perturb_prob", 0.0),
         )
     elif config.quantizer_type == "residual_vq":
         return ResidualVQ(

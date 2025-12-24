@@ -140,7 +140,14 @@ def main():
     logger.info("Creating model and optimizer")
 
     model = RQModel(config.model.vq_model, finetune_decoder=config.model.vq_model.get("finetune_decoder", False))
-
+    if config.experiment.get("vqgan_checkpoint", None) is not None and os.path.exists(config.experiment.vqgan_checkpoint):
+        logger.info(f"Loading VQGAN checkpoint from {config.experiment.vqgan_checkpoint}")
+        keys = model.load_pretrained(
+            config.experiment.vqgan_checkpoint,
+            strict_loading=False,
+        )
+        logger.info(f"Loaded VQGAN checkpoint with incompatible keys: {keys}")
+    
     # Create the EMA model
     if config.training.use_ema:
         ema_model = EMAModel(model.parameters(), decay=0.999, model_cls=RQModel, config=config.model.vq_model)
@@ -164,6 +171,11 @@ def main():
         config.model.discriminator,
         loss_config=loss_config
     )
+    if config.experiment.get("loss_module", None) is not None and os.path.exists(config.experiment.loss_module):
+        from safetensors.torch import load_file
+        loss_module_sd = load_file(config.experiment.loss_module, device="cpu")
+        loss_module.load_state_dict(loss_module_sd, strict=True)
+        logger.info(f"Loading loss module from {config.experiment.loss_module}")
 
     # Print Model:
     input_size = (1, 3, config.dataset.preprocessing.resolution, config.dataset.preprocessing.resolution)

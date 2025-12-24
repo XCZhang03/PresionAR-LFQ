@@ -21,6 +21,7 @@ class ResidualLFQ(torch.nn.Module):
             entropy_loss_weight: Union[float, List[float]] = 0.1,
             entropy_loss_temperature: float = 0.01,
             entropy_gamma: Union[float, List[float]] = 1.0,
+            perturb_prob: Union[float, List[float]] = 0.0
     ):
         super().__init__()
         self.token_size = token_size
@@ -55,6 +56,14 @@ class ResidualLFQ(torch.nn.Module):
         else:
             raise ValueError("entropy_loss_weight should be a float or a list of floats")
 
+        if isinstance(perturb_prob, (ListConfig, list)):
+            assert len(perturb_prob) == num_quantizers, "perturb_prob should be a list of length num_quantizers"
+        elif isinstance(perturb_prob, float):
+            perturb_prob = [perturb_prob] * num_quantizers
+        else:
+            raise ValueError("perturb_prob should be a float or a list of floats")
+        print(f"quantizer perturb_prob: {perturb_prob}")
+
         self.quantizers = []
         # self.quantizers.append(
         #     LookupFreeQuantizer(
@@ -75,6 +84,7 @@ class ResidualLFQ(torch.nn.Module):
                     entropy_gamma=entropy_gamma[ind],
                     scale = self.scales[ind],
                     variants=variants[ind],
+                    perturb_prob=perturb_prob[ind]
                 )
             )
 
@@ -116,14 +126,13 @@ class ResidualLFQ(torch.nn.Module):
 
 
         for ind, quantizer in enumerate(self.quantizers):
+            quantizer.enable_perturb = False # disable perturbation when computing quantizer loss
             z_quantized, result_dict = quantizer(residual)
             all_results.append(result_dict)
             quantized_list.append(z_quantized)
             # quantized_out = quantized_out + z_quantized
             residual = residual - z_quantized.detach()
         
-        # aggregate the quantized tensors
-        quantized_out = agg_quantized(quantized_list, num_levels)
         
         all_result_dict = {}
         all_result_dict = {key: torch.stack([result_dict[key] for result_dict in all_results], dim=0) for key in all_results[0].keys()}
@@ -133,6 +142,20 @@ class ResidualLFQ(torch.nn.Module):
         all_result_dict["commitment_loss"] = (all_result_dict["commitment_loss"] * loss_weight).sum(dim=0)
         all_result_dict["entropy_loss"] = (all_result_dict["entropy_loss"] * loss_weight).sum(dim=0)
        
+        if any(perturb > 0 for perturb in [quantizer.perturb_prob for quantizer in self.quantizers]):
+            quantized_list = []
+            quantized_out = 0
+            residual = z.detach()
+            # enable perturbation for the quantizers for quantization
+            for ind, quantizer in enumerate(self.quantizers):
+                quantizer.enable_perturb = True 
+                z_quantized, result_dict = quantizer(residual)
+                quantized_list.append(z_quantized)
+                # quantized_out = quantized_out + z_quantized
+                residual = residual - z_quantized.detach()
+        
+        # aggregate the quantized tensors
+        quantized_out = agg_quantized(quantized_list, num_levels)
 
 
         ## STE estimator?

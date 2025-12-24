@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-4-ft
+#SBATCH --job-name=vae-4-perturb
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -53,7 +53,11 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 # RUN_NAME="4lvl-huge_scale"
 # RUN_NAME="4lvl-ft-decoder-3"
 # RUN_NAME="4lvl-ft_decoder"
-RUN_NAME="4lvl-ft_dec-2m"
+# RUN_NAME="4lvl-ft_dec-2m"
+# RUN_NAME="4lvl-ft-aug-add-0.2"
+# RUN_NAME="4lvl-ft-perturb-0.1"
+# RUN_NAME="4lvl-ft-perturb-0.01"
+RUN_NAME="4lvl-ft-perturb-0.05"
 ####################
 
 
@@ -87,13 +91,25 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_10bit_4lvl.yaml
 #     model.vq_model.restart_ema=true \
 #     # experiment.init_checkpoint=/n/holylfs06/LABS/sham_lab/Users/ydu/zhangxiangcheng/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/2level-mixed_from_scratch-long/archive/checkpoint-700000 \
 #     "
-MODEL_ARGS="model.vq_model.finetune_decoder=true \
-    model.vq_model.schedule_type=weighted \
-    model.vq_model.weights=[0,0,0,1] \
-    model.vq_model.restart_ema=true \
-    experiment.init_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/4lvl-ft_decoder/archive/checkpoint-1600000 \
-    losses.perceptual_loss_on_logits=false \
-    training.max_train_steps=2_000_000 \
+# MODEL_ARGS="model.vq_model.finetune_decoder=true \
+#     model.vq_model.schedule_type=weighted \
+#     model.vq_model.weights=[0,0,0,1] \
+#     model.vq_model.restart_ema=true \
+#     experiment.init_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/4lvl-ft_decoder/archive/checkpoint-1600000 \
+#     losses.perceptual_loss_on_logits=false \
+#     training.max_train_steps=2_000_000 \
+#     "
+# MODEL_ARGS="experiment.init_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/4level-from_scratch-long/archive/checkpoint-1200000 \
+#     experiment.dont_resume_optimizer=true \
+#     experiment.resume_lr_scheduler=false \
+#     model.vq_model.augmentation.noise_mode=add \
+#     model.vq_model.augmentation.std=0.2 \
+#     training.max_train_steps=1_600_000 \
+#     optimizer.params.learning_rate=5e-5 \
+#     optimizer.params.discriminator_learning_rate=2e-5 \
+#     "
+MODEL_ARGS="experiment.init_checkpoint=/n/holylabs/ydu_lab/Lab/zhangxiangcheng/code/PresionAR-LFQ/maskbit/runs/outputs/rqbit_tokenizer_10bit/4level-from_scratch-long/archive/checkpoint-800000 \
+    model.vq_model.perturb_prob=0.05 \
     "
 ###################
 

@@ -41,7 +41,7 @@ Transform the tar file into torchvision datasets format:
 from torchvision.datasets import ImageNet
 
 ds = ImageNet("./data")
-ds_val = ImageNet("/data", split='val')
+ds_val = ImageNet("./data", split='val')
 ```
 
 ---

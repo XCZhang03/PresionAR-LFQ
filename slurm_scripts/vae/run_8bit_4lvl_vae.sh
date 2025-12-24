@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=vae-8bit-half_weight
+#SBATCH --job-name=vae-8bit-3variant
 #SBATCH -p kempner_requeue
 #SBATCH --mem=100G
 #SBATCH --mail-type=FAIL
@@ -13,7 +13,7 @@
 #SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:4               # number of GPUs per node
 #SBATCH -t 6-00:00                  # maximum execution time (HH:MM:SS)
 #SBATCH --contiguous
-#SBATCH --account=kempner_sham_lab
+#SBATCH --account=kempner_ydu_lab
 
 ######################
 ### Set enviroment ###
@@ -41,11 +41,12 @@ NUM_PROCESSES=$(expr $NNODES \* $GPUS_PER_NODE)
 ####################
 # RUN_NAME="4level-from_scratch-long"
 # RUN_NAME="4level-resume_from_1lvl"
-RUN_NAME="8bit-4lvl-3variant-from_scratch-half_weight"
+# RUN_NAME="8bit-4lvl-3variant-from_scratch-half_weight"
 # RUN_NAME="4lvl-from_scratch-base_3"
 # RUN_NAME="4lvl-from_scratch-base_4"
 # RUN_NAME="4lvl-from_scratch-half_quantize_weight"
 # RUN_NAME="4lvl-half_entropy_gamma-from_scratch"
+RUN_NAME="8bit-4lvl-3variant-perturb-0.05"
 ####################
 
 
@@ -60,12 +61,13 @@ config_file=$ACCELERATE_DIR/configs/tokenizer/rqbit_tokenizer_8bit_4lvl.yaml
 ## Model args #####
 ###################
 # MODEL_ARGS="model.vq_model.schedule_type=uniform"
-MODEL_ARGS="model.vq_model.schedule_type=weighted \
-    model.vq_model.weights=[3,1,1,1] \
-    "
+# MODEL_ARGS="model.vq_model.schedule_type=weighted \
+#     model.vq_model.weights=[3,1,1,1] \
+#     "
 # MODEL_ARGS="
 #     model.vq_model.entropy_gamma=[1.0,0.5,0.25,0.125] \
 #     "
+MODEL_ARGS="model.vq_model.perturb_prob=0.05"
 ###################
 
 srun bash -c "

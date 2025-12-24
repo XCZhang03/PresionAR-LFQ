@@ -1,7 +1,7 @@
 experiment:
     project: "MaskBit"
     name: "conditional_generator_10bit"
-    run_name: "stage1/4-bit-adaln-adaln"
+    run_name: "stage1/4-bit-concat"
     max_train_examples: 1_281_167 # total number of imagenet examples
     save_every: 1_000
     eval_loss_every: 20_000
@@ -39,14 +39,14 @@ model:
     mlm_model:
         model_cls: "cond_lfq_bert"
         stage: 1
-        hidden_dim: 1024
-        depth: 24
-        heads: 16
+        hidden_dim: 768
+        depth: 20
+        heads: 12
         mlp_ratio: 4.0
-        dropout: 0.0
+        dropout: 0.1
         drop_path: 0.0
         attn_l2_norm: True
-        label_conditioning: "adaln"
+        label_conditioning: "concat"
         guidance_scale: 6.4
         guidance_annealing: "cosine"
         num_steps: 64
@@ -57,7 +57,7 @@ model:
         class_label_dropout: 0.1
         scale_pow: 2.5
         use_sampling_annealing: False
-        codebook_splits: 1
+        codebook_splits: 2
 
 losses:
     mlm:
@@ -105,7 +105,7 @@ training:
     enable_tf32: True
     use_ema: True
     seed: 42
-    max_train_steps: 1_350_000
+    max_train_steps: 600_000
     overfit_batch: False
     overfit_batch_num: 1
     num_generated_images: 4 # Must be smaller than or equal to per_gpu_batch_size
